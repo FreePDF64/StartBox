@@ -245,7 +245,8 @@ procedure TForm1.MenuHelpClick(Sender: TObject);
 begin
   MessageDlgBottomRight
     ('StartBox' + #13 + #13 +
-     'Copyright © 2026 by FreePDF64@outlook.com' + #13 + #13 +
+     'Copyright © 2026 by FreePDF64@outlook.com' + #13 +
+     'Website -> https://github.com/FreePDF64/StartBox' + #13 + #13 +
      'StartBox darf sowohl im privaten als auch im kommerziellen' + #13 +
      'Umfeld ohne Bezahlung eingesetzt werden ("Freeware")!' + #13 +
      'Der Autor übernimmt keinerlei Haftung für Fehler, die direkt' + #13 +
