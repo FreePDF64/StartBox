@@ -2,6 +2,9 @@
 
 StartBox
 
+-> Kleines Windows-Programm zum Starten von Anwendungen, Verknüpfungen und Url's von einer zentralen Oberfläche aus
+
+
 Copyright © 2026 by FreePDF64@outlook.com
 
 StartBox darf sowohl im privaten als auch im kommerziellen
