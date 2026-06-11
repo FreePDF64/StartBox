@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   10.06.2026
+// Ende:   11.06.2026
 //
 
 unit OfficeLauncher;
@@ -54,7 +54,7 @@ type
     ButtonHeight: Integer;
     ButtonSpacing: Integer;
 
-    Dragging: Boolean;
+    IsDragging: Boolean;
     DragButton: TBitBtn;
     DragOffsetY: Integer;
     DragOffsetX: Integer;
@@ -114,7 +114,7 @@ implementation
 {$R *.dfm}
 
 uses
-  Winapi.ActiveX, System.Win.ComObj, Vcl.Graphics, EineInstanz_Unit;
+  Winapi.ActiveX, System.Win.ComObj, Vcl.Graphics;
 
 const
   OfficeApps: array[0..5] of record
@@ -597,7 +597,7 @@ var
   Target: string;
 begin
   // Beim Drag&Drop Klick NICHT ausführen
-  if DragTotalMove > 4 then Exit;
+  if (DragTotalMove > 4) or IsDragging then Exit;
 
   Target := TBitBtn(Sender).Hint;
 
@@ -636,7 +636,7 @@ begin
   DragButton := TBitBtn(Sender);
 
   // Startwerte setzen
-  Dragging := False;
+  IsDragging := False;
   DragDelayPassed := False;
 
   DragStartTime := GetTickCount;
@@ -675,11 +675,11 @@ begin
   end;
 
   // Jetzt erst Drag starten
-  Dragging := True;
+  IsDragging := True;
   if not Assigned(DragButton) then
     Exit;
 
-  if Dragging then
+  if IsDragging then
   begin
     DragTotalMove := DragTotalMove + Abs(Y - DragOffsetY);
     DragButton.Top := DragButton.Top + (Y - DragOffsetY);
@@ -703,13 +703,13 @@ end;
 procedure TForm1.ButtonMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  if not Dragging then
-  begin
+//  if not IsDragging then
+//  begin
     // normaler Klick
-    ButtonClick(Sender);
-  end;
+//    ButtonClick(Sender);
+//  end;
 
-  Dragging := False;
+  IsDragging := False;
   DragButton := nil;
   LastSwapButton := nil;
   RecalculateButtonPositions;
