@@ -541,7 +541,7 @@ begin
 
   Application.HintPause := 700;       // Verzögerung bis Tooltip erscheint
   Application.HintHidePause := 5000;  // Wie lange der Tooltip sichtbar bleibt
-  DragDelay := 200; // Millisekunden
+  DragDelay := 300; // Verzögerung von Drag&Drop in Millisekunden
 
   IniPath := ChangeFileExt(Application.ExeName, '.ini');
   Ini := TIniFile.Create(IniPath);
