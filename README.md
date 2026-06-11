@@ -13,7 +13,7 @@ Der Autor übernimmt keinerlei Haftung für Fehler, die direkt
 oder indirekt aus der Benutzung dieser Software entstehen.
 
 ToDo:
-- Programme werden per Drag&&Drop hinzugefügt
+- Programme werden per Drag&Drop hinzugefügt
 - Icons werden automatisch aus EXE-Dateien extrahiert
 - Internetverknüpfungen (.url) werden per Drag&&Drop hinzugefügt
 - Rechtsklick auf Button: Umbenennen oder Löschen
