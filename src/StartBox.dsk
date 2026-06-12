@@ -17,22 +17,17 @@ File_14=TSourceModule,'D:\Delphi\FreePDF64\Seiten_Unit.pas',0,1,1,1,1,0,0,,
 
 [Modules]
 Module0=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
-Module1=D:\Delphi\OfficeLauncher\StartBox.dproj
-Count=2
+Count=1
 EditWindowCount=1
 
 [D:\Delphi\OfficeLauncher\OfficeLauncher.pas]
 ModuleType=TSourceModule
 
-[D:\Delphi\OfficeLauncher\StartBox.dproj]
-ModuleType=TBaseProject
-
 [EditWindow0]
-ViewCount=3
+ViewCount=2
 CurrentEditView=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
 View0=0
 View1=1
-View2=2
 PercentageSizes=1
 Create=1
 Visible=1
@@ -73,24 +68,13 @@ OTAEditViewType=WelcomePage.MainPage
 [View1]
 CustomEditViewType=TEditView
 Module=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
-CursorX=4
-CursorY=793
-TopLine=772
-LeftCol=1
-Elisions=
-Bookmarks={0,526,22}
-EditViewName=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
-
-[View2]
-CustomEditViewType=TEditView
-Module=D:\Delphi\OfficeLauncher\StartBox.dpr
 CursorX=1
-CursorY=15
-TopLine=1
+CursorY=143
+TopLine=116
 LeftCol=1
 Elisions=
-Bookmarks=
-EditViewName=D:\Delphi\OfficeLauncher\StartBox.dpr
+Bookmarks={0,532,22}
+EditViewName=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
 
 [Watches]
 Count=0
@@ -216,11 +200,16 @@ MaxLeft=-1
 MaxTop=-1
 ClientWidth=1895
 ClientHeight=4246
-TBDockHeight=8812
+TBDockHeight=9014
 LRDockWidth=1895
 Dockable=1
 StayOnTop=0
 SplitPos=152
+
+[PropInspDesignerSelection]
+ArrangeBy=Name
+SelectedItem=BorderStyle,OnCreate
+ExpandedItems=Anchors=0,BorderIcons=0,Constraints=0,CustomTitleBar=0,Font=0,GlassFrame=0,HorzScrollBar=0,LiveBindings=0,LiveBindings-Designer=0,Margins=0,Padding=0,StyleElements=0,Touch=0,VertScrollBar=0
 
 [frmDesignPreview]
 PercentageSizes=1
@@ -316,8 +305,8 @@ TBDockHeight=362
 LRDockWidth=273
 Dockable=1
 StayOnTop=0
-Name=26
-Description=70
+Name=50
+Description=137
 filter=1
 
 [DebugLogView]
@@ -672,7 +661,7 @@ MaxLeft=-1
 MaxTop=-1
 ClientWidth=1996
 ClientHeight=4551
-TBDockHeight=8812
+TBDockHeight=9014
 LRDockWidth=1996
 Dockable=1
 StayOnTop=0
@@ -696,7 +685,7 @@ MaxLeft=-1
 MaxTop=-1
 ClientWidth=1895
 ClientHeight=2565
-TBDockHeight=8812
+TBDockHeight=9014
 LRDockWidth=1895
 Dockable=1
 StayOnTop=0
@@ -720,7 +709,7 @@ MaxLeft=-1
 MaxTop=-1
 ClientWidth=1996
 ClientHeight=2261
-TBDockHeight=8812
+TBDockHeight=9014
 LRDockWidth=1996
 Dockable=1
 StayOnTop=0

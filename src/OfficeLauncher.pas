@@ -75,6 +75,7 @@ type
 
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
+    procedure WMNCLButtonDblClk(var Msg: TWMNCLButtonDblClk); message WM_NCLBUTTONDBLCLK;
 
     procedure MinimizeToTray;
 
@@ -135,6 +136,11 @@ const
 
 procedure TForm1.WMSysCommand(var Msg: TWMSysCommand);
 begin
+  // Maximieren verhindern
+  if (Msg.CmdType = SC_MAXIMIZE) then
+    Exit;
+
+  // Minimieren in den Tray
   if (Msg.CmdType and $FFF0) = SC_MINIMIZE then
   begin
     MinimizeToTray;
@@ -549,9 +555,15 @@ begin
       Exit(True);
 end;
 
+procedure TForm1.WMNCLButtonDblClk(var Msg: TWMNCLButtonDblClk);
+begin
+  // NICHT maximieren
+end;
+
 procedure TForm1.FormCreate(Sender: TObject);
 var IniPath: string;
 begin
+  BorderIcons := BorderIcons - [biMaximize];
   CoInitialize(nil);
 
   Application.HintPause := 700;       // Verzögerung bis Tooltip erscheint
