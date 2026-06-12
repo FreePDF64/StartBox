@@ -13,7 +13,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, Winapi.ShellAPI,
-  Winapi.ShlObj, Vcl.Dialogs,
+  Winapi.ShlObj, Vcl.Dialogs, System.Math,
   System.SysUtils, System.Classes, System.IniFiles,
   Vcl.Forms, Vcl.Controls, Vcl.StdCtrls, Vcl.Buttons,
   Vcl.ExtCtrls, Vcl.ImgList, Vcl.Menus,
@@ -313,6 +313,62 @@ begin
   DestroyIcon(SFI.hIcon);
 end;
 
+// Einspaltig, sonst auf zwei Spalten erweitern...
+procedure TForm1.RecalculateButtonPositions;
+const
+  MarginX = 10;
+  MarginY = 6;
+  TopOffset = 10;
+  LeftOffset = 10;
+var
+  I, Count: Integer;
+  BtnW, BtnH: Integer;
+  NeededHeight: Integer;
+  MaxH, MaxW: Integer;
+  Cols, Rows: Integer;
+  BtnLeft, BtnTop: Integer;
+begin
+  Count := Buttons.Count;
+  if Count = 0 then Exit;
+
+  BtnW := Buttons[0].Width;
+  BtnH := Buttons[0].Height;
+
+  // Bildschirmgrenzen (ohne Taskleiste)
+  MaxH := Screen.WorkAreaHeight;
+  MaxW := Screen.WorkAreaWidth;
+
+  // Höhe, wenn ALLE Buttons untereinander stehen
+  NeededHeight := TopOffset + Count * (BtnH + MarginY) + 20;
+
+  // Standard: 1 Spalte
+  Cols := 1;
+
+  // Wenn die Form zu hoch würde → auf 2 Spalten umschalten
+  if NeededHeight > MaxH then
+    Cols := 2;
+
+  // Anzahl benötigter Zeilen
+  Rows := (Count + Cols - 1) div Cols;
+
+  // Formgröße anpassen
+  ClientWidth  := Cols * (BtnW + MarginX) + LeftOffset * 2;
+  ClientHeight := Rows * (BtnH + MarginY) + TopOffset * 2;
+
+  // *** NEU: Wenn die Form rechts aus dem Monitor ragt → nach links schieben ***
+  if Left + Width > Screen.WorkAreaLeft + MaxW then
+    Left := (Screen.WorkAreaLeft + MaxW) - Width;
+
+  // Buttons positionieren
+  for I := 0 to Count - 1 do
+  begin
+    BtnLeft := LeftOffset + (I mod Cols) * (BtnW + MarginX);
+    BtnTop  := TopOffset + (I div Cols) * (BtnH + MarginY);
+
+    Buttons[I].SetBounds(BtnLeft, BtnTop, BtnW, BtnH);
+  end;
+end;
+
 procedure TForm1.AddButton(const Caption, ExeName: string);
 var
   Btn: TBitBtn;
@@ -326,22 +382,21 @@ begin
   if ExeName.StartsWith('http://') or ExeName.StartsWith('https://') then
   begin
     Cap := ExtractDomainFromURL(ExeName);
-    // WICHTIG: Glyph deaktivieren, sonst wird Images ignoriert
     Btn.Glyph      := NIL;
     Btn.Images     := ImageList1;
     Btn.ImageIndex := 0;
-  end else
+  end
+  else
   begin
     Cap := Caption;
-    // Icons bei alle anderen Dateien...
-    begin
-      IconIndex := ExtractShellIconToImageList(ExeName, ImageList1);
-      Btn.Images := ImageList1;
-      Btn.ImageIndex := IconIndex;
-    end;
+
+    IconIndex := ExtractShellIconToImageList(ExeName, ImageList1);
+    Btn.Glyph := nil;
+    Btn.Images := ImageList1;
+    Btn.ImageIndex := IconIndex;
   end;
 
-  Btn.Caption := Caption;
+  Btn.Caption := Cap;
   Btn.Hint := ExeName;
   Btn.ShowHint := True;
   Btn.Font.Name := 'Segoe UI';
@@ -358,8 +413,9 @@ begin
 
   Buttons.Add(Btn);
 
+  // Breite neu berechnen (deine Funktion)
   RecalculateButtonWidths;
-  RecalculateButtonPositions;
+  RecalculateButtonPositions;  // NEUE Version mit Spaltenlogik
 end;
 
 procedure TForm1.LoadOfficeButtons;
@@ -489,33 +545,6 @@ begin
     Buttons[I].Width := NewWidth;
 end;
 
-procedure TForm1.RecalculateButtonPositions;
-var
-  I: Integer;
-  Y: Integer;
-  MaxWidth: Integer;
-begin
-  if Buttons.Count = 0 then Exit;
-
-  Y := 10;
-  MaxWidth := Buttons[0].Width;
-
-  for I := 0 to Buttons.Count - 1 do
-  begin
-    Buttons[I].Left := 10;
-    Buttons[I].Top := Y;
-    Y := Y + Buttons[I].Height + 6;
-
-    if Buttons[I].Width > MaxWidth then
-      MaxWidth := Buttons[I].Width;
-  end;
-
-  // Formhöhe dynamisch
-  ClientHeight := Y + 5;
-  // Formbreite dynamisch
-  ClientWidth := MaxWidth + 20; // 10px links + 10px rechts
-end;
-
 function TForm1.ButtonExistsForExe(const Exe: string): Boolean;
 var
   Btn: TBitBtn;
@@ -634,7 +663,6 @@ begin
   Tmp := Buttons[IA];
   Buttons[IA] := Buttons[IB];
   Buttons[IB] := Tmp;
-  RecalculateButtonPositions;
 end;
 
 procedure TForm1.ButtonMouseDown(Sender: TObject; Button: TMouseButton;
@@ -715,7 +743,6 @@ begin
   IsDragging := False;
   DragButton := nil;
   LastSwapButton := nil;
-  RecalculateButtonPositions;
 end;
 
 procedure TForm1.ButtonContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
