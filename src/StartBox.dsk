@@ -73,12 +73,12 @@ OTAEditViewType=WelcomePage.MainPage
 [View1]
 CustomEditViewType=TEditView
 Module=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
-CursorX=1
-CursorY=718
-TopLine=701
+CursorX=4
+CursorY=793
+TopLine=772
 LeftCol=1
 Elisions=
-Bookmarks={0,1010,1}
+Bookmarks={0,526,22}
 EditViewName=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
 
 [View2]
@@ -216,16 +216,11 @@ MaxLeft=-1
 MaxTop=-1
 ClientWidth=1895
 ClientHeight=4246
-TBDockHeight=9014
+TBDockHeight=8812
 LRDockWidth=1895
 Dockable=1
 StayOnTop=0
 SplitPos=152
-
-[PropInspDesignerSelection]
-ArrangeBy=Name
-SelectedItem=Name,Images
-ExpandedItems=LiveBindings-Designer=0,MenuAnimation=0
 
 [frmDesignPreview]
 PercentageSizes=1
@@ -321,8 +316,8 @@ TBDockHeight=362
 LRDockWidth=273
 Dockable=1
 StayOnTop=0
-Name=8
-Description=11
+Name=26
+Description=70
 filter=1
 
 [DebugLogView]
@@ -677,7 +672,7 @@ MaxLeft=-1
 MaxTop=-1
 ClientWidth=1996
 ClientHeight=4551
-TBDockHeight=9014
+TBDockHeight=8812
 LRDockWidth=1996
 Dockable=1
 StayOnTop=0
@@ -701,7 +696,7 @@ MaxLeft=-1
 MaxTop=-1
 ClientWidth=1895
 ClientHeight=2565
-TBDockHeight=9014
+TBDockHeight=8812
 LRDockWidth=1895
 Dockable=1
 StayOnTop=0
@@ -725,7 +720,7 @@ MaxLeft=-1
 MaxTop=-1
 ClientWidth=1996
 ClientHeight=2261
-TBDockHeight=9014
+TBDockHeight=8812
 LRDockWidth=1996
 Dockable=1
 StayOnTop=0
