@@ -12,12 +12,29 @@ unit OfficeLauncher;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, Winapi.ShellAPI,
-  Winapi.ShlObj, Vcl.Dialogs, System.Math,
-  System.SysUtils, System.Classes, System.IniFiles,
-  Vcl.Forms, Vcl.Controls, Vcl.StdCtrls, Vcl.Buttons,
-  Vcl.ExtCtrls, Vcl.ImgList, Vcl.Menus,
-  System.Generics.Collections, System.ImageList;
+  // WinAPI
+  Winapi.Windows,
+  Winapi.Messages,
+  Winapi.ShellAPI,
+  Winapi.ShlObj,
+
+  // System
+  System.SysUtils,
+  System.Classes,
+  System.IniFiles,
+  System.Generics.Collections,
+  System.ImageList,
+
+  // VCL
+  Vcl.Forms,
+  Vcl.Controls,
+  Vcl.StdCtrls,
+  Vcl.Buttons,
+  Vcl.ExtCtrls,
+  Vcl.ImgList,
+  Vcl.Menus,
+  Vcl.Graphics,
+  Vcl.Dialogs;
 
 type
   TForm1 = class(TForm)
@@ -114,7 +131,8 @@ implementation
 {$R *.dfm}
 
 uses
-  Winapi.ActiveX, System.Win.ComObj, Vcl.Graphics;
+  Winapi.ActiveX,
+  System.Win.ComObj;
 
 const
   OfficeApps: array[0..5] of record
@@ -316,16 +334,16 @@ end;
 // Einspaltig, sonst auf zwei Spalten erweitern...
 procedure TForm1.RecalculateButtonPositions;
 const
-  MarginX = 10;
-  MarginY = 6;
-  TopOffset = 10;
-  LeftOffset = 10;
+  OuterMargin = 12;   // gleicher Rand oben, unten, links, rechts
+  MarginX     = 12;   // Abstand zwischen Spalten
+  MarginY     = 8;    // Abstand zwischen Zeilen
 var
   I, Count: Integer;
   BtnW, BtnH: Integer;
-  NeededHeight: Integer;
-  MaxH, MaxW: Integer;
+  MaxH: Integer;
   Cols, Rows: Integer;
+  TotalButtonsWidth: Integer;
+  TotalButtonsHeight: Integer;
   BtnLeft, BtnTop: Integer;
 begin
   Count := Buttons.Count;
@@ -334,39 +352,44 @@ begin
   BtnW := Buttons[0].Width;
   BtnH := Buttons[0].Height;
 
-  // Bildschirmgrenzen (ohne Taskleiste)
   MaxH := Screen.WorkAreaHeight;
-  MaxW := Screen.WorkAreaWidth;
 
-  // Höhe, wenn ALLE Buttons untereinander stehen
-  NeededHeight := TopOffset + Count * (BtnH + MarginY) + 20;
+  // 1 oder 2 Spalten?
+  if (OuterMargin * 2 + Count * (BtnH + MarginY)) > MaxH then
+    Cols := 2
+  else
+    Cols := 1;
 
-  // Standard: 1 Spalte
-  Cols := 1;
-
-  // Wenn die Form zu hoch würde → auf 2 Spalten umschalten
-  if NeededHeight > MaxH then
-    Cols := 2;
-
-  // Anzahl benötigter Zeilen
   Rows := (Count + Cols - 1) div Cols;
 
-  // Formgröße anpassen
-  ClientWidth  := Cols * (BtnW + MarginX) + LeftOffset * 2;
-  ClientHeight := Rows * (BtnH + MarginY) + TopOffset * 2;
+  // Gesamtbreite der Button-Gruppe
+  TotalButtonsWidth := Cols * BtnW + (Cols - 1) * MarginX;
 
-  // *** NEU: Wenn die Form rechts aus dem Monitor ragt → nach links schieben ***
-  if Left + Width > Screen.WorkAreaLeft + MaxW then
-    Left := (Screen.WorkAreaLeft + MaxW) - Width;
+  // Gesamthöhe der Button-Gruppe
+  TotalButtonsHeight := Rows * BtnH + (Rows - 1) * MarginY;
 
-  // Buttons positionieren
+  // Formgröße exakt passend setzen
+  ClientWidth  := OuterMargin * 2 + TotalButtonsWidth;
+  ClientHeight := OuterMargin * 2 + TotalButtonsHeight;
+
+  // Buttons positionieren (zentriert + symmetrisch)
   for I := 0 to Count - 1 do
   begin
-    BtnLeft := LeftOffset + (I mod Cols) * (BtnW + MarginX);
-    BtnTop  := TopOffset + (I div Cols) * (BtnH + MarginY);
+    BtnLeft :=
+      OuterMargin +
+      ((ClientWidth - 2 * OuterMargin - TotalButtonsWidth) div 2) +
+      (I mod Cols) * (BtnW + MarginX);
+
+    BtnTop :=
+      OuterMargin +
+      (I div Cols) * (BtnH + MarginY);
 
     Buttons[I].SetBounds(BtnLeft, BtnTop, BtnW, BtnH);
   end;
+
+  // Falls rechts aus dem Bildschirm → nach links schieben
+  if Left + Width > Screen.WorkAreaLeft + Screen.WorkAreaWidth then
+    Left := (Screen.WorkAreaLeft + Screen.WorkAreaWidth) - Width;
 end;
 
 procedure TForm1.AddButton(const Caption, ExeName: string);
@@ -381,12 +404,14 @@ begin
   // URL?
   if ExeName.StartsWith('http://') or ExeName.StartsWith('https://') then
   begin
-    Cap := ExtractDomainFromURL(ExeName);
+    Cap := Caption;  // <<< WICHTIG: Caption aus INI verwenden!
+    if Cap.StartsWith('http://') or Cap.StartsWith('https://') then
+      Cap := ExtractDomainFromURL(ExeName);
+
     Btn.Glyph      := NIL;
     Btn.Images     := ImageList1;
     Btn.ImageIndex := 0;
-  end
-  else
+  end else
   begin
     Cap := Caption;
 
@@ -656,90 +681,96 @@ begin
 end;
 
 procedure TForm1.SwapButtons(A, B: TBitBtn);
-var IA, IB: Integer; Tmp: TBitBtn;
+var
+  IndexA, IndexB: Integer;
+  Temp: TBitBtn;
 begin
-  IA := Buttons.IndexOf(A);
-  IB := Buttons.IndexOf(B);
-  Tmp := Buttons[IA];
-  Buttons[IA] := Buttons[IB];
-  Buttons[IB] := Tmp;
+  IndexA := Buttons.IndexOf(A);
+  IndexB := Buttons.IndexOf(B);
+
+  if (IndexA < 0) or (IndexB < 0) then Exit;
+
+  // Buttons in der Liste tauschen
+  Buttons[IndexA] := B;
+  Buttons[IndexB] := A;
+
+  // Positionen tauschen
+  Temp := A;
+  A.Top := B.Top;
+  B.Top := Temp.Top;
 end;
 
 procedure TForm1.ButtonMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
+var
+  I: Integer;
 begin
-  if Button <> mbLeft then Exit;
-
-  DragButton := TBitBtn(Sender);
-
-  // Startwerte setzen
-  IsDragging := False;
-  DragDelayPassed := False;
-
-  DragStartTime := GetTickCount;
-  DragStartX := X;
-  DragStartY := Y;
-
-  // Offset für visuelles Verschieben
-  DragOffsetX := X;
-  DragOffsetY := Y;
-
-  // Für Click-Blockierung
-  DragTotalMove := 0;
-
-  LastSwapButton := nil;
+  if Button = mbLeft then
+  begin
+    DragButton := TBitBtn(Sender);
+    DragStartX := X;
+    DragStartY := Y;
+    DragOffsetY := Y;
+    DragStartTime := GetTickCount;
+    DragDelayPassed := False;
+    DragTotalMove := 0;
+    LastSwapButton := nil;
+    IsDragging := False;
+  end;
+  DragButton.BringToFront;
 end;
 
 procedure TForm1.ButtonMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
-  Btn: TBitBtn; I, dx, dy: Integer;
+  Btn: TBitBtn;
+  I, dx, dy: Integer;
 begin
-  // Mausbewegung prüfen
+  if DragButton = nil then Exit;
+  DragButton.BringToFront;
+
   dx := Abs(X - DragStartX);
   dy := Abs(Y - DragStartY);
+  if (dx < 4) and (dy < 4) then Exit;
 
-  // Bewegungsschwelle (z. B. 4 Pixel)
-  if (dx < 4) and (dy < 4) then
-    Exit;
-
-  // Zeitverzögerung prüfen
   if not DragDelayPassed then
   begin
-    if GetTickCount - DragStartTime < DragDelay then
-      Exit;
-
+    if GetTickCount - DragStartTime < DragDelay then Exit;
     DragDelayPassed := True;
   end;
 
-  // Jetzt erst Drag starten
   IsDragging := True;
-  if not Assigned(DragButton) then
-    Exit;
 
-  if IsDragging then
+  DragTotalMove := DragTotalMove + Abs(Y - DragOffsetY);
+  DragButton.Top := DragButton.Top + (Y - DragOffsetY);
+
+  // Prüfen, ob DragButton einen anderen Button überlappt
+  for I := 0 to Buttons.Count - 1 do
   begin
-    DragTotalMove := DragTotalMove + Abs(Y - DragOffsetY);
-    DragButton.Top := DragButton.Top + (Y - DragOffsetY);
-    for I := 0 to Buttons.Count - 1 do
+    Btn := Buttons[I];
+
+    if (Btn <> DragButton) and ButtonsOverlap(DragButton, Btn) then
     begin
-      Btn := Buttons[I];
-      if (Btn <> DragButton) and ButtonsOverlap(DragButton, Btn) then
+      if Btn <> LastSwapButton then
       begin
-        if Btn <> LastSwapButton then
-        begin
-          SwapButtons(DragButton, Btn);
-          LastSwapButton := Btn;
-        end;
-        Exit;
+        SwapButtons(DragButton, Btn);
+        LastSwapButton := Btn;
       end;
+      Exit;
     end;
-    LastSwapButton := nil;
   end;
+
+  LastSwapButton := nil;
 end;
 
 procedure TForm1.ButtonMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
+  if IsDragging then
+  begin
+    RecalculateButtonWidths;
+    RecalculateButtonPositions;
+  end;
+
   IsDragging := False;
   DragButton := nil;
   LastSwapButton := nil;
