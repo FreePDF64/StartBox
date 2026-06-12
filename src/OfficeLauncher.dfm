@@ -174,18 +174,21 @@ object Form1: TForm1
   object PopupMenu1: TPopupMenu
     Left = 64
     Top = 32
-    object MenuHelp: TMenuItem
-      Caption = 'Info '#252'ber StartBox'
-      OnClick = MenuHelpClick
+    object Restore: TMenuItem
+      Caption = 'Wiederherstellen'
+      OnClick = RestoreClick
     end
     object MinimizeJN: TMenuItem
       Caption = 'Minimieren'
       Checked = True
       OnClick = MinimizeJNClick
     end
-    object Restore: TMenuItem
-      Caption = 'Wiederherstellen'
-      OnClick = RestoreClick
+    object N2: TMenuItem
+      Caption = '-'
+    end
+    object MenuHelp: TMenuItem
+      Caption = 'Info '#252'ber StartBox'
+      OnClick = MenuHelpClick
     end
     object N1: TMenuItem
       Caption = '-'

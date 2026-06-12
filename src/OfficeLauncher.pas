@@ -29,6 +29,7 @@ type
     MinimizeJN: TMenuItem;
     Restore: TMenuItem;
     N1: TMenuItem;
+    N2: TMenuItem;
 
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
