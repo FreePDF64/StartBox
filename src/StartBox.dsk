@@ -74,11 +74,11 @@ OTAEditViewType=WelcomePage.MainPage
 CustomEditViewType=TEditView
 Module=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
 CursorX=1
-CursorY=1009
-TopLine=1009
+CursorY=718
+TopLine=701
 LeftCol=1
 Elisions=
-Bookmarks={0,988,1}
+Bookmarks={0,1010,1}
 EditViewName=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
 
 [View2]
@@ -222,6 +222,11 @@ Dockable=1
 StayOnTop=0
 SplitPos=152
 
+[PropInspDesignerSelection]
+ArrangeBy=Name
+SelectedItem=Name,Images
+ExpandedItems=LiveBindings-Designer=0,MenuAnimation=0
+
 [frmDesignPreview]
 PercentageSizes=1
 Create=1
@@ -317,7 +322,7 @@ LRDockWidth=273
 Dockable=1
 StayOnTop=0
 Name=8
-Description=9
+Description=11
 filter=1
 
 [DebugLogView]

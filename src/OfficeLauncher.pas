@@ -428,9 +428,7 @@ begin
   Btn.Font.Size := 9;
   Btn.Height := ButtonHeight;
 
-  Btn.PopupMenu := PopupButton;
   Btn.OnContextPopup := ButtonContextPopup;
-
   Btn.OnMouseDown := ButtonMouseDown;
   Btn.OnMouseMove := ButtonMouseMove;
   Btn.OnMouseUp := ButtonMouseUp;
@@ -683,21 +681,21 @@ end;
 procedure TForm1.SwapButtons(A, B: TBitBtn);
 var
   IndexA, IndexB: Integer;
-  Temp: TBitBtn;
+  TempTop: Integer;
 begin
   IndexA := Buttons.IndexOf(A);
   IndexB := Buttons.IndexOf(B);
 
   if (IndexA < 0) or (IndexB < 0) then Exit;
 
-  // Buttons in der Liste tauschen
+  // Liste tauschen
   Buttons[IndexA] := B;
   Buttons[IndexB] := A;
 
   // Positionen tauschen
-  Temp := A;
+  TempTop := A.Top;
   A.Top := B.Top;
-  B.Top := Temp.Top;
+  B.Top := TempTop;
 end;
 
 procedure TForm1.ButtonMouseDown(Sender: TObject; Button: TMouseButton;
@@ -717,7 +715,6 @@ begin
     LastSwapButton := nil;
     IsDragging := False;
   end;
-  DragButton.BringToFront;
 end;
 
 procedure TForm1.ButtonMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -725,13 +722,18 @@ var
   Btn: TBitBtn;
   I, dx, dy: Integer;
 begin
+  // Sicherheit: kein DragButton → kein Zugriff
   if DragButton = nil then Exit;
+
+  // Button immer oben halten
   DragButton.BringToFront;
 
+  // Bewegungsschwelle
   dx := Abs(X - DragStartX);
   dy := Abs(Y - DragStartY);
   if (dx < 4) and (dy < 4) then Exit;
 
+  // Drag-Verzögerung
   if not DragDelayPassed then
   begin
     if GetTickCount - DragStartTime < DragDelay then Exit;
@@ -740,6 +742,7 @@ begin
 
   IsDragging := True;
 
+  // Button bewegen
   DragTotalMove := DragTotalMove + Abs(Y - DragOffsetY);
   DragButton.Top := DragButton.Top + (Y - DragOffsetY);
 
@@ -748,7 +751,12 @@ begin
   begin
     Btn := Buttons[I];
 
-    if (Btn <> DragButton) and ButtonsOverlap(DragButton, Btn) then
+    // Sicherheit: nil oder DragButton selbst überspringen
+    if (Btn = nil) or (Btn = DragButton) then
+      Continue;
+
+    // Überlappung → tauschen
+    if ButtonsOverlap(DragButton, Btn) then
     begin
       if Btn <> LastSwapButton then
       begin
@@ -759,6 +767,7 @@ begin
     end;
   end;
 
+  // Kein Überlappungspartner → Reset
   LastSwapButton := nil;
 end;
 
@@ -777,9 +786,23 @@ begin
 end;
 
 procedure TForm1.ButtonContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
+var
+  Btn: TBitBtn;
+  P: TPoint;
 begin
-  ButtonToDelete := TBitBtn(Sender);
-  Handled := False;
+  Handled := True;
+
+  if not (Sender is TBitBtn) then
+    Exit;
+
+  Btn := TBitBtn(Sender);
+
+  // Button merken
+  ButtonToDelete := Btn;
+
+  // Popup manuell anzeigen
+  P := Btn.ClientToScreen(MousePos);
+  PopupButton.Popup(P.X, P.Y);
 end;
 
 procedure KeepFormOnScreen(F: TForm);
@@ -845,7 +868,6 @@ begin
     RecalculateButtonWidths;
     RecalculateButtonPositions;
     SaveButtonsToIni;
-
   finally
     dlg.Free;
   end;
