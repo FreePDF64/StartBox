@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   11.06.2026
+// Ende:   12.06.2026
 //
 
 unit OfficeLauncher;
@@ -101,7 +101,6 @@ type
     procedure MenuRenameButtonClick(Sender: TObject);
 
     function ResolveLnk(const LnkFile: string): string;
-    function AddExeIconToImageList(const ExePath: string): Integer;
 
   public
   end;
@@ -244,7 +243,7 @@ end;
 procedure TForm1.MenuHelpClick(Sender: TObject);
 begin
   MessageDlgBottomRight
-    ('StartBox' + #13 + #13 +
+    ('StartBox Version 1.1' + #13 + #13 +
      'Copyright © 2026 by FreePDF64@outlook.com' + #13 +
      'Website -> https://github.com/FreePDF64/StartBox' + #13 + #13 +
      'StartBox darf sowohl im privaten als auch im kommerziellen' + #13 +
@@ -252,9 +251,8 @@ begin
      'Der Autor übernimmt keinerlei Haftung für Fehler, die direkt' + #13 +
      'oder indirekt aus der Benutzung dieser Software entstehen.' + #13 + #13 +
      'ToDo:' + #13 +
-     '- Programme werden per Drag&&Drop hinzugefügt' + #13 +
-     '- Icons werden automatisch aus EXE-Dateien extrahiert' + #13 +
-     '- Internetverknüpfungen (.url) werden per Drag&&Drop hinzugefügt' + #13 +
+     '- Programme/Dateien/etc. werden per Drag&&Drop hinzugefügt' + #13 +
+     '- Icons werden automatisch aus den Dateien extrahiert' + #13 +
      '- Rechtsklick auf Button: Umbenennen oder Löschen' + #13 +
      '- Schließen (X) minimiert in den Tray' + #13 +
      '- Auf Wunsch NACH Klick auf Buttons in den Tray minimieren' + #13 +
@@ -290,14 +288,36 @@ begin
   Result := '';
 end;
 
+function ExtractShellIconToImageList(const FileName: string; ImageList: TImageList): Integer;
+var
+  SFI: SHFILEINFO;
+  Icon: TIcon;
+begin
+  Result := -1;
+
+  // Shell-Icon für die Datei holen (16x16)
+  if SHGetFileInfo(PChar(FileName), 0, SFI, SizeOf(SFI),
+     SHGFI_ICON or SHGFI_SMALLICON) = 0 then
+    Exit;
+
+  Icon := TIcon.Create;
+  try
+    Icon.Handle := SFI.hIcon;
+    Result := ImageList.AddIcon(Icon);
+  finally
+    Icon.Free;
+  end;
+
+  // Icon-Handle freigeben
+  DestroyIcon(SFI.hIcon);
+end;
+
 procedure TForm1.AddButton(const Caption, ExeName: string);
 var
   Btn: TBitBtn;
   IconIndex: Integer;
   Cap: string;
 begin
-  IconIndex := AddExeIconToImageList(ExeName);
-
   Btn := TBitBtn.Create(Self);
   Btn.Parent := Self;
 
@@ -312,12 +332,14 @@ begin
   end else
   begin
     Cap := Caption;
-    Btn.Images := ImageList1;
-    Btn.ImageIndex := IconIndex;
-    // Icon nur bei EXE
-    if FileExists(ExeName) and (LowerCase(ExtractFileExt(ExeName)) = '.exe') then
-      AddExeIconToImageList(ExeName);
+    // Icons bei alle anderen Dateien...
+    begin
+      IconIndex := ExtractShellIconToImageList(ExeName, ImageList1);
+      Btn.Images := ImageList1;
+      Btn.ImageIndex := IconIndex;
+    end;
   end;
+
   Btn.Caption := Caption;
   Btn.Hint := ExeName;
   Btn.ShowHint := True;
@@ -337,37 +359,6 @@ begin
 
   RecalculateButtonWidths;
   RecalculateButtonPositions;
-end;
-
-function TForm1.AddExeIconToImageList(const ExePath: string): Integer;
-var
-  Icon: TIcon;
-  LargeIcon, SmallIcon: HICON;
-begin
-  Result := -1;
-
-  if not FileExists(ExePath) then
-    Exit;
-
-  LargeIcon := 0;
-  SmallIcon := 0;
-
-  Icon := TIcon.Create;
-  try
-    if ExtractIconEx(PChar(ExePath), 0, LargeIcon, SmallIcon, 1) > 0 then
-    begin
-      if SmallIcon <> 0 then
-      begin
-        Icon.Handle := SmallIcon;
-        Result := ImageList1.AddIcon(Icon);
-      end;
-
-      if LargeIcon <> 0 then
-        DestroyIcon(LargeIcon);
-    end;
-  finally
-    Icon.Free;
-  end;
 end;
 
 procedure TForm1.LoadOfficeButtons;
@@ -541,7 +532,7 @@ begin
 
   Application.HintPause := 700;       // Verzögerung bis Tooltip erscheint
   Application.HintHidePause := 5000;  // Wie lange der Tooltip sichtbar bleibt
-  DragDelay := 300; // Verzögerung von Drag&Drop in Millisekunden
+  DragDelay := 300;                   // Verzögerung von Drag&Drop in Millisekunden
 
   IniPath := ChangeFileExt(Application.ExeName, '.ini');
   Ini := TIniFile.Create(IniPath);
@@ -577,7 +568,7 @@ begin
   LoadOfficeButtons;      // Office automatisch hinzufügen
 
   if Buttons.Count = 0 then
-    MessageDlg('Bitte Anwendungen hinzufügen per Drag&Drop.', mtInformation, [mbOK], 0);
+    MessageDlg('Bitte Anwendungen/Dateien/etc. hinzufügen per Drag&Drop.', mtInformation, [mbOK], 0);
 
   RecalculateButtonWidths;
   RecalculateButtonPositions;
@@ -592,22 +583,39 @@ begin
   CoUninitialize;
 end;
 
+procedure OpenWithDialog(const FileName: string);
+var
+  sei: TShellExecuteInfo;
+begin
+  ZeroMemory(@sei, SizeOf(sei));
+  sei.cbSize := SizeOf(sei);
+  sei.fMask := SEE_MASK_INVOKEIDLIST;
+  sei.lpVerb := 'openas';  // <<< moderner Windows 11 Dialog
+  sei.lpFile := PChar(FileName);
+  sei.nShow := SW_SHOWNORMAL;
+
+  ShellExecuteEx(@sei);
+end;
+
 procedure TForm1.ButtonClick(Sender: TObject);
 var
   Target: string;
+  ExecResult: HINST;
 begin
-  // Beim Drag&Drop Klick NICHT ausführen
-  if (DragTotalMove > 4) or IsDragging then Exit;
+  if IsDragging then Exit;
 
   Target := TBitBtn(Sender).Hint;
 
-  if Target.StartsWith('http://') or Target.StartsWith('https://') then
+  // Erst normal versuchen
+  ExecResult := ShellExecute(0, 'open', PChar(Target), nil, nil, SW_SHOWNORMAL);
+
+  // Wenn nicht startbar → Windows 11 „Öffnen mit…“-Dialog
+  if ExecResult <= 32 then
   begin
-    ShellExecute(0, 'open', PChar(Target), nil, nil, SW_SHOWNORMAL);
+    OpenWithDialog(Target);
     Exit;
   end;
 
-  ShellExecute(0, 'open', PChar(Target), nil, nil, SW_SHOWNORMAL);
   if MinimizeJN.Checked then
     MinimizeToTray;
 end;
@@ -703,12 +711,6 @@ end;
 procedure TForm1.ButtonMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-//  if not IsDragging then
-//  begin
-    // normaler Klick
-//    ButtonClick(Sender);
-//  end;
-
   IsDragging := False;
   DragButton := nil;
   LastSwapButton := nil;
@@ -937,8 +939,8 @@ begin
       SaveButtonsToIni;
     end
 
-    // EXE
-    else if LowerCase(ExtractFileExt(Dropped)) = '.exe' then
+    // EXE oder alles andere...
+    else
     begin
       AddButton(ChangeFileExt(ExtractFileName(Dropped), ''), Dropped);
       SaveButtonsToIni;
