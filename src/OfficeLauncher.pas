@@ -497,6 +497,10 @@ begin
   MinimizeJN.Checked := Ini.ReadBool('Form', 'Minimize', MinimizeJN.Checked);
   // Hotkey Ja/Nein
   HotkeyJN.Checked := Ini.ReadBool('Hotkey', 'Enabled', HotkeyJN.Checked);
+  if HotkeyJN.Checked then
+    Hint := 'StartBox (Hotkey: Alt+S)'
+  else
+    Hint := 'StartBox';
 end;
 
 procedure TForm1.SaveFormPosition;
@@ -585,12 +589,8 @@ var
   IniPath: string;
 begin
   if HotkeyJN.Checked then
-  begin
     // Hotkey Alt+S
     RegisterHotKey(Handle, HOTKEY_ID, MOD_ALT, Ord('S'));
-    Form1.Caption := 'StartBox (Alt+S)';
-  end else
-    Form1.Caption := 'StartBox';
 
   BorderIcons := BorderIcons - [biMaximize];
   CoInitialize(nil);
@@ -626,7 +626,6 @@ begin
   DragAcceptFiles(Handle, True);
 
   ShowHint := True;
-  Hint := 'Info über StartBox -> Rechtsklick auf Symbol im SysTray';
 
   LoadFormPosition;
   OfficeEdition := DetectOfficeEdition;
@@ -659,11 +658,11 @@ begin
   if HotkeyJN.Checked then
   begin
     RegisterHotKey(Handle, HOTKEY_ID, MOD_ALT, Ord('S'));
-    Form1.Caption := 'StartBox (Alt+S)';
+    Hint := 'StartBox (Hotkey: Alt+S)';
   end else
   begin
     UnregisterHotKey(Handle, HOTKEY_ID);
-    Form1.Caption := 'StartBox';
+    Hint := 'StartBox';
   end;
 end;
 
