@@ -356,8 +356,8 @@ begin
      '- Rechtsklick auf Button: Umbenennen oder Löschen' + #13 +
      '- Schließen (X) minimiert in den Tray' + #13 +
      '- Beenden NUR über das Tray-Menü' + #13 +
-     '- Auswahl: Nach Klick auf Buttons in den Tray minimieren' + #13 +
-     '- Auswahl: Maximieren (toggeln) per Hotkey (Alt+S)' + #13 +
+     '- Auswahl: Nach Klick auf Buttons minimieren in den Tray' + #13 +
+     '- Auswahl: Maximieren (Toggle) via Hotkey Alt+S' + #13 +
      '- Auswahl: StartBox zum Windows-Autostart hinzufügen',
     mtInformation, [mbOk]);
 end;
@@ -566,7 +566,7 @@ begin
   // Hotkey Ja/Nein
   HotkeyJN.Checked := Ini.ReadBool('Hotkey', 'Enabled', HotkeyJN.Checked);
   if HotkeyJN.Checked then
-    Hint := 'StartBox (Hotkey: Alt+S)'
+    Hint := 'StartBox (Hotkey Alt+S)'
   else
     Hint := 'StartBox';
 end;
@@ -728,7 +728,7 @@ begin
   if HotkeyJN.Checked then
   begin
     RegisterHotKey(Handle, HOTKEY_ID, MOD_ALT, Ord('S'));
-    Hint := 'StartBox (Hotkey: Alt+S)';
+    Hint := 'StartBox (Hotkey Alt+S)';
   end else
   begin
     UnregisterHotKey(Handle, HOTKEY_ID);

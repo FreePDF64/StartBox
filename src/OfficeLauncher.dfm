@@ -186,12 +186,12 @@ object Form1: TForm1
       OnClick = MenuHelpClick
     end
     object MinimizeJN: TMenuItem
-      Caption = 'Nach Buttonklick in den Tray minimieren'
+      Caption = 'Nach Buttonklick minimieren'
       Checked = True
       OnClick = MinimizeJNClick
     end
     object HotkeyJN: TMenuItem
-      Caption = 'Maximieren (toggeln) per Hotkey (Alt+S)'#39
+      Caption = 'Hotkey Alt+S: Maximieren (Toggle)'
       Checked = True
       OnClick = HotkeyJNClick
     end

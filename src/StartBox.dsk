@@ -56,7 +56,7 @@ RightPanelClients=DockSite2,DockSite4
 RightPanelData=00000800010100000000980F00000000000001CC0700000000000001000000004912000009000000446F636B53697465320100000000B91B000009000000446F636B5369746534FFFFFFFF
 BottomPanelSize=1528
 BottomPanelClients=MessageView,DockSite1
-BottomPanelData=0000080001020100000009000000446F636B5369746531E74400000000000002F8050000000000000100000000E74400000F0000004D65737361676556696577466F726DFFFFFFFF
+BottomPanelData=00000800010200000000E74400000000000002F8050000000000000100000000732200000F0000004D65737361676556696577466F726D0100000000E744000009000000446F636B5369746531FFFFFFFF
 BottomMiddlePanelSize=0
 BottomMiddlePanelClients=DockSite0,GraphDrawingModel
 BottomMiddelPanelData=0000080001020200000009000000446F636B536974653010000000477261706844726177696E67566965779F1D00000000000002F206000000000000FFFFFFFF
@@ -68,13 +68,13 @@ OTAEditViewType=WelcomePage.MainPage
 [View1]
 CustomEditViewType=TEditView
 Module=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
-CursorX=18
-CursorY=360
-TopLine=337
+CursorX=36
+CursorY=734
+TopLine=694
 LeftCol=1
 Elisions=
 Bookmarks={0,148,27}
-EditViewName=Borland.FormDesignerView
+EditViewName=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
 
 [Watches]
 Count=0
@@ -156,11 +156,11 @@ Docked=1
 State=0
 Left=0
 Top=36
-Width=9922
+Width=4922
 Height=1333
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=9922
+ClientWidth=4922
 ClientHeight=1333
 TBDockHeight=1333
 LRDockWidth=2770
@@ -208,8 +208,8 @@ SplitPos=152
 
 [PropInspDesignerSelection]
 ArrangeBy=Name
-SelectedItem=AutoCheck,
-ExpandedItems=LiveBindings-Designer=0
+SelectedItem=Name,Action
+ExpandedItems=Anchors=0,BorderIcons=0,Constraints=0,CustomTitleBar=0,LiveBindings=0,Menu=0,LiveBindings-Designer=0,MenuAnimation=0
 
 [frmDesignPreview]
 PercentageSizes=1
@@ -378,12 +378,12 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=3824
-Height=1152
+Width=4961
+Height=1065
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=3824
-ClientHeight=1152
+ClientWidth=4961
+ClientHeight=1065
 TBDockHeight=2065
 LRDockWidth=3484
 Dockable=1
@@ -626,23 +626,23 @@ HostDockSite=DockBottomPanel
 DockSiteType=1
 PercentageSizes=1
 Create=1
-Visible=0
+Visible=1
 Docked=1
 State=0
-Left=8
-Top=8
-Width=3824
-Height=1420
+Left=1270
+Top=36
+Width=4961
+Height=1333
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=3824
-ClientHeight=1420
-TBDockHeight=1420
+ClientWidth=4961
+ClientHeight=1333
+TBDockHeight=1333
 LRDockWidth=3824
 Dockable=1
 StayOnTop=0
 TabPosition=1
-ActiveTabID=DebugLogView
+ActiveTabID=CallStackWindow
 TabDockClients=DebugLogView,BreakpointWindow,ThreadStatusWindow,CallStackWindow,WatchWindow,LocalVarsWindow
 
 [DockSite2]
