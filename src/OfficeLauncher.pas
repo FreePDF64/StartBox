@@ -285,7 +285,7 @@ begin
      'Umfeld ohne Bezahlung eingesetzt werden ("Freeware")!' + #13 +
      'Der Autor übernimmt keinerlei Haftung für Fehler, die direkt' + #13 +
      'oder indirekt aus der Benutzung dieser Software entstehen.' + #13 + #13 +
-     'ToDo:' + #13 +
+     'HowTo:' + #13 +
      '- Programme/Dateien/etc. werden per Drag&&Drop hinzugefügt' + #13 +
      '- Icons werden automatisch aus den Dateien extrahiert' + #13 +
      '- Rechtsklick auf Button: Umbenennen oder Löschen' + #13 +
