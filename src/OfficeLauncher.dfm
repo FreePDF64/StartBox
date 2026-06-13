@@ -178,11 +178,6 @@ object Form1: TForm1
       Caption = 'Info '#252'ber StartBox'
       OnClick = MenuHelpClick
     end
-    object MinimizeJN: TMenuItem
-      Caption = 'Minimieren'
-      Checked = True
-      OnClick = MinimizeJNClick
-    end
     object Restore: TMenuItem
       Caption = 'Wiederherstellen'
       OnClick = RestoreClick
@@ -190,10 +185,19 @@ object Form1: TForm1
     object N1: TMenuItem
       Caption = '-'
     end
+    object MinimizeJN: TMenuItem
+      Caption = 'Nach Buttonklick in den Tray minimieren'
+      Checked = True
+      OnClick = MinimizeJNClick
+    end
     object HotkeyJN: TMenuItem
-      Caption = 'Hotkey (Alt+S)'
+      Caption = 'Maximieren per Hotkey (Alt+S)'
       Checked = True
       OnClick = HotkeyJNClick
+    end
+    object AutostartJN: TMenuItem
+      Caption = 'Zum Windows-Autostart hinzuf'#252'gen'
+      OnClick = AutostartJNClick
     end
     object N2: TMenuItem
       Caption = '-'

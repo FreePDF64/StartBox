@@ -13,11 +13,14 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, Winapi.ShellAPI,
-  Winapi.ShlObj, Vcl.Dialogs,
+  Winapi.ShlObj, Vcl.Dialogs, Registry,
   System.SysUtils, System.Classes, System.IniFiles,
   Vcl.Forms, Vcl.Controls, Vcl.StdCtrls, Vcl.Buttons,
   Vcl.ExtCtrls, Vcl.ImgList, Vcl.Menus,
   System.Generics.Collections, System.ImageList;
+
+type
+  TAutorunKind = (akUserRun, akRun);
 
 type
   TForm1 = class(TForm)
@@ -31,6 +34,7 @@ type
     N1: TMenuItem;
     HotkeyJN: TMenuItem;
     N2: TMenuItem;
+    AutostartJN: TMenuItem;
 
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -48,6 +52,7 @@ type
     procedure MinimizeJNClick(Sender: TObject);
     procedure RestoreClick(Sender: TObject);
     procedure HotkeyJNClick(Sender: TObject);
+    procedure AutostartJNClick(Sender: TObject);
 
   private
     Ini: TIniFile;
@@ -176,6 +181,53 @@ begin
   Result := NeededHeight > Screen.WorkAreaHeight;
 end;
 
+// Programm in den Autostart...
+function CreateAutorunEntry(const AName, AFilename: string;
+  const AKind: TAutorunKind): Boolean;
+var
+  Reg: TRegistry;
+begin
+  Result := False;
+  Reg := TRegistry.Create;
+  try
+    if AKind = akUserRun then
+      Reg.Rootkey := HKEY_CURRENT_USER
+    else
+      Reg.Rootkey := HKEY_LOCAL_MACHINE;
+
+    case AKind of
+      akRun, akUserRun:
+        Result := Reg.OpenKey('\Software\Microsoft\Windows\CurrentVersion\Run', True);
+    end;
+    Reg.WriteString(AName, AFilename);
+  finally
+    Reg.Free;
+  end;
+end;
+
+procedure TForm1.AutostartJNClick(Sender: TObject);
+var
+  Reg: TRegistry;
+begin
+  AutostartJN.Checked := Not AutostartJN.Checked;
+  if AutostartJN.Checked then
+    // Ab in den Autostart nach HKCU: \Software\Microsoft\Windows\CurrentVersion\Run
+    CreateAutorunEntry(Application.Title, ParamStr(0), akUserRun)
+  else
+  // sonst Registry-Eintrag wieder löschen...
+  begin
+    Reg := TRegistry.Create;
+    try
+      Reg.Rootkey := HKEY_CURRENT_USER;
+      Reg.OpenKey('\Software\Microsoft\Windows\CurrentVersion\Run\', False);
+      Reg.DeleteValue('StartBox');
+      Reg.CloseKey;
+    finally
+      Reg.Free;
+    end;
+  end;
+end;
+
 function ExtractDomainFromURL(const URL: string): string;
 var
   S: string;
@@ -291,8 +343,9 @@ begin
      '- Rechtsklick auf Button: Umbenennen oder Löschen' + #13 +
      '- Schließen (X) minimiert in den Tray' + #13 +
      '- Beenden NUR über das Tray-Menü' + #13 +
+     '- Auswahl: Nach Klick auf Buttons in den Tray minimieren' + #13 +
      '- Auswahl: Maximieren per Hotkey-Abfrage (Alt+S)' + #13 +
-     '- Auswahl: NACH Klick auf Buttons in den Tray minimieren',
+     '- Auswahl: StartBox zum Windows-Autostart hinzufügen',
     mtInformation, [mbOk]);
 end;
 
@@ -495,6 +548,8 @@ begin
   Left := Ini.ReadInteger('Form', 'Left', Left);
   Top := Ini.ReadInteger('Form', 'Top', Top);
   MinimizeJN.Checked := Ini.ReadBool('Form', 'Minimize', MinimizeJN.Checked);
+  // Autostart?
+  AutostartJN.Checked := Ini.ReadBool('Autostart', 'Enabled', AutostartJN.Checked);
   // Hotkey Ja/Nein
   HotkeyJN.Checked := Ini.ReadBool('Hotkey', 'Enabled', HotkeyJN.Checked);
   if HotkeyJN.Checked then
@@ -508,6 +563,8 @@ begin
   Ini.WriteInteger('Form', 'Left', Left);
   Ini.WriteInteger('Form', 'Top', Top);
   Ini.WriteBool('Form', 'Minimize', MinimizeJN.Checked);
+  // Autostart?
+  Ini.WriteBool('Autostart', 'Enabled', AutostartJN.Checked);
   // Hotkey Ja/Nein
   Ini.WriteBool('Hotkey', 'Enabled', HotkeyJN.Checked);
 end;
