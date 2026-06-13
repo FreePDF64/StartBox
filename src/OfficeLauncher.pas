@@ -85,6 +85,7 @@ type
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
     procedure WMNCLButtonDblClk(var Msg: TWMNCLButtonDblClk); message WM_NCLBUTTONDBLCLK;
     procedure WMHotKey(var Msg: TWMHotKey); message WM_HOTKEY;
+    procedure ToggleMainForm;
 
     procedure MinimizeToTray;
 
@@ -144,13 +145,25 @@ const
   ButtonSpacing = 10;
   HOTKEY_ID     = 1;
 
+procedure TForm1.ToggleMainForm;
+begin
+  // Wenn die Form sichtbar und NICHT minimiert ist → minimieren
+  if (WindowState <> wsMinimized) and IsWindowVisible(Handle) then
+  begin
+    MinimizeToTray;
+    Exit;
+  end;
+  // Sonst → wiederherstellen + nach vorne holen
+  Restore.Click;
+  SetForegroundWindow(Handle);      // Fokus erzwingen
+  BringWindowToTop(Handle);         // über alle anderen Fenster
+end;
+
 procedure TForm1.WMHotKey(var Msg: TWMHotKey);
 begin
   if Msg.HotKey = HOTKEY_ID then
   begin
-    Restore.Click;
-    SetForegroundWindow(Handle);      // Fokus erzwingen
-    BringWindowToTop(Handle);         // über alle anderen Fenster
+    ToggleMainForm;
   end;
 end;
 
@@ -344,7 +357,7 @@ begin
      '- Schließen (X) minimiert in den Tray' + #13 +
      '- Beenden NUR über das Tray-Menü' + #13 +
      '- Auswahl: Nach Klick auf Buttons in den Tray minimieren' + #13 +
-     '- Auswahl: Maximieren per Hotkey-Abfrage (Alt+S)' + #13 +
+     '- Auswahl: Maximieren (toggeln) per Hotkey (Alt+S)' + #13 +
      '- Auswahl: StartBox zum Windows-Autostart hinzufügen',
     mtInformation, [mbOk]);
 end;
