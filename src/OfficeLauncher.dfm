@@ -190,6 +190,14 @@ object Form1: TForm1
     object N1: TMenuItem
       Caption = '-'
     end
+    object HotkeyJN: TMenuItem
+      Caption = 'Hotkey (Alt+S)'
+      Checked = True
+      OnClick = HotkeyJNClick
+    end
+    object N2: TMenuItem
+      Caption = '-'
+    end
     object MenuExit: TMenuItem
       Caption = 'Beenden'
       OnClick = MenuExitClick

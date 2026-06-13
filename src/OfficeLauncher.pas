@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   12.06.2026
+// Ende:   13.06.2026
 //
 
 unit OfficeLauncher;
@@ -29,6 +29,8 @@ type
     MinimizeJN: TMenuItem;
     Restore: TMenuItem;
     N1: TMenuItem;
+    HotkeyJN: TMenuItem;
+    N2: TMenuItem;
 
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -45,6 +47,7 @@ type
     procedure MenuHelpClick(Sender: TObject);
     procedure MinimizeJNClick(Sender: TObject);
     procedure RestoreClick(Sender: TObject);
+    procedure HotkeyJNClick(Sender: TObject);
 
   private
     Ini: TIniFile;
@@ -76,6 +79,7 @@ type
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
     procedure WMNCLButtonDblClk(var Msg: TWMNCLButtonDblClk); message WM_NCLBUTTONDBLCLK;
+    procedure WMHotKey(var Msg: TWMHotKey); message WM_HOTKEY;
 
     procedure MinimizeToTray;
 
@@ -133,6 +137,17 @@ const
   ButtonWidth   = 200;
   ButtonHeight  = 40;
   ButtonSpacing = 10;
+  HOTKEY_ID     = 1;
+
+procedure TForm1.WMHotKey(var Msg: TWMHotKey);
+begin
+  if Msg.HotKey = HOTKEY_ID then
+  begin
+    Restore.Click;
+    SetForegroundWindow(Handle);      // Fokus erzwingen
+    BringWindowToTop(Handle);         // über alle anderen Fenster
+  end;
+end;
 
 procedure TForm1.WMSysCommand(var Msg: TWMSysCommand);
 begin
@@ -263,7 +278,7 @@ end;
 procedure TForm1.MenuHelpClick(Sender: TObject);
 begin
   MessageDlgBottomRight
-    ('StartBox Version 1.1' + #13 + #13 +
+    ('StartBox Version 1.2' + #13 + #13 +
      'Copyright © 2026 by FreePDF64@outlook.com' + #13 +
      'Website -> https://github.com/FreePDF64/StartBox' + #13 + #13 +
      'StartBox darf sowohl im privaten als auch im kommerziellen' + #13 +
@@ -275,8 +290,9 @@ begin
      '- Icons werden automatisch aus den Dateien extrahiert' + #13 +
      '- Rechtsklick auf Button: Umbenennen oder Löschen' + #13 +
      '- Schließen (X) minimiert in den Tray' + #13 +
-     '- Auf Wunsch NACH Klick auf Buttons in den Tray minimieren' + #13 +
-     '- Beenden NUR über das Tray-Menü',
+     '- Beenden NUR über das Tray-Menü' + #13 +
+     '- Auswahl: Maximieren per Hotkey-Abfrage (Alt+S)' + #13 +
+     '- Auswahl: NACH Klick auf Buttons in den Tray minimieren',
     mtInformation, [mbOk]);
 end;
 
@@ -479,6 +495,8 @@ begin
   Left := Ini.ReadInteger('Form', 'Left', Left);
   Top := Ini.ReadInteger('Form', 'Top', Top);
   MinimizeJN.Checked := Ini.ReadBool('Form', 'Minimize', MinimizeJN.Checked);
+  // Hotkey Ja/Nein
+  HotkeyJN.Checked := Ini.ReadBool('Hotkey', 'Enabled', HotkeyJN.Checked);
 end;
 
 procedure TForm1.SaveFormPosition;
@@ -486,6 +504,8 @@ begin
   Ini.WriteInteger('Form', 'Left', Left);
   Ini.WriteInteger('Form', 'Top', Top);
   Ini.WriteBool('Form', 'Minimize', MinimizeJN.Checked);
+  // Hotkey Ja/Nein
+  Ini.WriteBool('Hotkey', 'Enabled', HotkeyJN.Checked);
 end;
 
 function TForm1.CalculateOptimalButtonWidth: Integer;
@@ -561,8 +581,17 @@ begin
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
-var IniPath: string;
+var
+  IniPath: string;
 begin
+  if HotkeyJN.Checked then
+  begin
+    // Hotkey Alt+S
+    RegisterHotKey(Handle, HOTKEY_ID, MOD_ALT, Ord('S'));
+    Form1.Caption := 'StartBox (Alt+S)';
+  end else
+    Form1.Caption := 'StartBox';
+
   BorderIcons := BorderIcons - [biMaximize];
   CoInitialize(nil);
 
@@ -614,11 +643,28 @@ end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
+  UnregisterHotKey(Handle, HOTKEY_ID);
+
   SaveFormPosition;
   SaveButtonsToIni;
   Ini.Free;
   Buttons.Free;
   CoUninitialize;
+end;
+
+procedure TForm1.HotkeyJNClick(Sender: TObject);
+begin
+  HotkeyJN.Checked := not HotkeyJN.Checked;
+
+  if HotkeyJN.Checked then
+  begin
+    RegisterHotKey(Handle, HOTKEY_ID, MOD_ALT, Ord('S'));
+    Form1.Caption := 'StartBox (Alt+S)';
+  end else
+  begin
+    UnregisterHotKey(Handle, HOTKEY_ID);
+    Form1.Caption := 'StartBox';
+  end;
 end;
 
 procedure OpenWithDialog(const FileName: string);
@@ -824,7 +870,6 @@ begin
     RecalculateButtonWidths;
     RecalculateButtonPositions;
     SaveButtonsToIni;
-
   finally
     dlg.Free;
   end;
