@@ -191,7 +191,7 @@ object Form1: TForm1
       OnClick = MinimizeJNClick
     end
     object HotkeyJN: TMenuItem
-      Caption = 'Maximieren per Hotkey (Alt+S)'
+      Caption = 'Maximieren (toggeln) per Hotkey (Alt+S)'#39
       Checked = True
       OnClick = HotkeyJNClick
     end
