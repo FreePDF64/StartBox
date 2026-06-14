@@ -16,8 +16,8 @@ ToDo:
 - Programme/Dateien/etc. werden per Drag&Drop hinzugefügt
 - Icons werden automatisch aus den Dateien extrahiert
 - Rechtsklick auf Button: Umbenennen oder Löschen
-- Schließen (X) minimiert in den Tray
-- Beenden NUR über das Tray-Menü
-- Auswahl: Nach Klick auf Buttons minimieren in den Tray
+- Schließen (X) minimiert in den System Tray
+- Beenden NUR über das System Tray-Menü
+- Auswahl: Nach Klick auf Buttons minimieren in den System Tray
 - Auswahl: Maximieren (Toggle) via Hotkey Alt+S
 - Auswahl: StartBox zum Windows-Autostart hinzufügen
