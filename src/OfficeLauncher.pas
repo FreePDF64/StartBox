@@ -151,18 +151,29 @@ const
   ButtonSpacing = 10;
   HOTKEY_ID     = 1;
 
+// Ist die Hauptform im Vordergrund?
+function IsMyWindowForeground(FormHandle: HWND): Boolean;
+begin
+  Result := GetForegroundWindow = FormHandle;
+end;
+
 procedure TForm1.ToggleMainForm;
 begin
-  // Wenn die Form sichtbar und NICHT minimiert ist → minimieren
-  if (WindowState <> wsMinimized) and IsWindowVisible(Handle) then
+  if IsMyWindowForeground(Form1.Handle) then
   begin
-    MinimizeToTray;
-    Exit;
+    // Wenn die Form sichtbar und NICHT minimiert ist → minimieren
+    if (WindowState <> wsMinimized) and IsWindowVisible(Handle) then
+    begin
+      MinimizeToTray;
+      Exit;
+    end;
+  end else
+  begin
+    // Sonst → wiederherstellen + nach vorne holen
+    Restore.Click;
+    SetForegroundWindow(Handle);      // Fokus erzwingen
+    BringWindowToTop(Handle);         // über alle anderen Fenster
   end;
-  // Sonst → wiederherstellen + nach vorne holen
-  Restore.Click;
-  SetForegroundWindow(Handle);      // Fokus erzwingen
-  BringWindowToTop(Handle);         // über alle anderen Fenster
 end;
 
 procedure TForm1.WMHotKey(var Msg: TWMHotKey);

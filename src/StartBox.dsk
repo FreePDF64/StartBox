@@ -69,11 +69,11 @@ OTAEditViewType=WelcomePage.MainPage
 CustomEditViewType=TEditView
 Module=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
 CursorX=37
-CursorY=62
-TopLine=58
+CursorY=154
+TopLine=133
 LeftCol=1
 Elisions=
-Bookmarks={0,154,27}
+Bookmarks={0,160,27}
 EditViewName=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
 
 [Watches]
@@ -300,8 +300,8 @@ TBDockHeight=362
 LRDockWidth=273
 Dockable=1
 StayOnTop=0
-Name=62
-Description=171
+Name=50
+Description=137
 filter=1
 
 [DebugLogView]
