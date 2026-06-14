@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   13.06.2026
+// Ende:   14.06.2026
 //
 
 unit OfficeLauncher;
@@ -354,9 +354,9 @@ begin
      '- Programme/Dateien/etc. werden per Drag&&Drop hinzugefügt' + #13 +
      '- Icons werden automatisch aus den Dateien extrahiert' + #13 +
      '- Rechtsklick auf Button: Umbenennen oder Löschen' + #13 +
-     '- Schließen (X) minimiert in den Tray' + #13 +
+     '- Schließen (X) minimiert in den System Tray' + #13 +
      '- Beenden NUR über das Tray-Menü' + #13 +
-     '- Auswahl: Nach Klick auf Buttons minimieren in den Tray' + #13 +
+     '- Auswahl: Nach Klick auf Buttons minimieren in den System Tray' + #13 +
      '- Auswahl: Maximieren (Toggle) via Hotkey Alt+S' + #13 +
      '- Auswahl: StartBox zum Windows-Autostart hinzufügen',
     mtInformation, [mbOk]);
@@ -566,9 +566,11 @@ begin
   // Hotkey Ja/Nein
   HotkeyJN.Checked := Ini.ReadBool('Hotkey', 'Enabled', HotkeyJN.Checked);
   if HotkeyJN.Checked then
-    Hint := 'StartBox (Hotkey Alt+S)'
+    Hint := '- StartBox Hotkey Alt+S' + #13 +
+            '- RMB im System Tray für Menü'
   else
-    Hint := 'StartBox';
+    Hint := '- StartBox' + #13 +
+            '- RMB im System Tray für Menü';
 end;
 
 procedure TForm1.SaveFormPosition;
@@ -728,11 +730,13 @@ begin
   if HotkeyJN.Checked then
   begin
     RegisterHotKey(Handle, HOTKEY_ID, MOD_ALT, Ord('S'));
-    Hint := 'StartBox (Hotkey Alt+S)';
+    Hint := '- StartBox Hotkey Alt+S' + #13 +
+            '- RMB im System Tray für Menü'
   end else
   begin
     UnregisterHotKey(Handle, HOTKEY_ID);
-    Hint := 'StartBox';
+    Hint := '- StartBox' + #13 +
+            '- RMB im System Tray für Menü'
   end;
 end;
 
