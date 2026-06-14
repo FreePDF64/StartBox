@@ -17,5 +17,7 @@ ToDo:
 - Icons werden automatisch aus den Dateien extrahiert
 - Rechtsklick auf Button: Umbenennen oder Löschen
 - Schließen (X) minimiert in den Tray
-- Auf Wunsch NACH Klick auf Buttons in den Tray minimieren
 - Beenden NUR über das Tray-Menü
+- Auswahl: Nach Klick auf Buttons minimieren in den Tray
+- Auswahl: Maximieren (Toggle) via Hotkey Alt+S
+- Auswahl: StartBox zum Windows-Autostart hinzufügen
