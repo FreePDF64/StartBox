@@ -68,10 +68,9 @@ type
     DragOffsetY: Integer;
     DragOffsetX: Integer;
     DragTotalMove: Integer;
-    DragDelayPassed: Boolean;
+
     DragStartTime: Cardinal;
     DragDelay: Cardinal;
-    DragStartX, DragStartY: Integer;
     LastSwapButton: TBitBtn;
 
     OfficeEdition: string;
@@ -120,6 +119,13 @@ type
 
 var
   Form1: TForm1;
+
+var
+  DragStartTime: Cardinal;
+  DragStartPos: TPoint;
+  DragDelay: Cardinal = 120; // ms
+  DragThreshold: Integer = 4; // Pixel
+  Dragging: Boolean = False;
 
 implementation
 
@@ -801,12 +807,9 @@ begin
   DragButton := TBitBtn(Sender);
 
   // Startwerte setzen
-  IsDragging := False;
-  DragDelayPassed := False;
-
   DragStartTime := GetTickCount;
-  DragStartX := X;
-  DragStartY := Y;
+  DragStartPos := Point(X, Y);
+  IsDragging := False;
 
   // Offset für visuelles Verschieben
   DragOffsetX := X;
@@ -823,29 +826,24 @@ var
   Btn: TBitBtn; I, dx, dy: Integer;
 begin
   // Mausbewegung prüfen
-  dx := Abs(X - DragStartX);
-  dy := Abs(Y - DragStartY);
-
-  // Bewegungsschwelle (z. B. 4 Pixel)
-  if (dx < 4) and (dy < 4) then
-    Exit;
-
-  // Zeitverzögerung prüfen
-  if not DragDelayPassed then
+  if ssLeft in Shift then
   begin
-    if GetTickCount - DragStartTime < DragDelay then
+    dx := Abs(X - DragStartPos.X);
+    dy := Abs(Y - DragStartPos.Y);
+
+    // Bewegung zu klein → kein Drag
+    if (dx < DragThreshold) and (dy < DragThreshold) then
       Exit;
 
-    DragDelayPassed := True;
-  end;
+    // Zeit noch nicht erreicht → kein Drag
+    if (GetTickCount - DragStartTime) < DragDelay then
+      Exit;
 
-  // Jetzt erst Drag starten
-  IsDragging := True;
-  if not Assigned(DragButton) then
-    Exit;
+    // Jetzt erst Drag starten
+    IsDragging := True;
+    if not Assigned(DragButton) then
+      Exit;
 
-  if IsDragging then
-  begin
     DragTotalMove := DragTotalMove + Abs(Y - DragOffsetY);
     DragButton.Top := DragButton.Top + (Y - DragOffsetY);
     for I := 0 to Buttons.Count - 1 do
