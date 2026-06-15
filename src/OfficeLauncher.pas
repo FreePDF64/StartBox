@@ -453,7 +453,11 @@ begin
   // URL?
   if ExeName.StartsWith('http://') or ExeName.StartsWith('https://') then
   begin
-    Cap := ExtractDomainFromURL(ExeName);
+    if Caption = '' then
+      Cap := ExtractDomainFromURL(ExeName)
+    else
+      Cap := Caption;
+
     // WICHTIG: Glyph deaktivieren, sonst wird Images ignoriert
     Btn.Glyph      := NIL;
     Btn.Images     := ImageList1;
@@ -469,7 +473,7 @@ begin
     end;
   end;
 
-  Btn.Caption := Caption;
+  Btn.Caption := Cap;
   Btn.Hint := ExeName;
   Btn.ShowHint := True;
   Btn.Font.Name := 'Segoe UI';
@@ -533,30 +537,7 @@ begin
   begin
     Exe := Ini.ReadString('Buttons', 'Btn' + I.ToString + '_Exe', '');
     Cap := Ini.ReadString('Buttons', 'Btn' + I.ToString + '_Caption', '');
-
-    if Exe = '' then Continue;
-
-    // URL?
-    if Exe.StartsWith('http://') or Exe.StartsWith('https://') then
-    begin
-      if Cap = '' then
-        Cap := ExtractDomainFromURL(Exe);
-
-      AddButton(Cap, Exe);
-      Continue;
-    end;
-
-    // EXE?
-    if FileExists(Exe) then
-    begin
-      if Cap = '' then
-        Cap := ChangeFileExt(ExtractFileName(Exe), '');
-
-      AddButton(Cap, Exe);
-      Continue;
-    end;
-     // Fallback (z. B. Datei nicht mehr vorhanden)
-     AddButton(Cap, Exe);
+    AddButton(Cap, Exe);
   end;
 end;
 
@@ -1076,7 +1057,7 @@ procedure TForm1.WMDropFiles(var Msg: TWMDropFiles);
 var
   Count: Integer;
   FileName: array[0..MAX_PATH] of Char;
-  Dropped, URL: string;
+  Dropped, URL, URL2: string;
 begin
   Count := DragQueryFile(Msg.Drop, $FFFFFFFF, nil, 0);
 
@@ -1091,7 +1072,8 @@ begin
       URL := ReadUrlFromInternetShortcut(Dropped);
       if URL <> '' then
       begin
-        AddButton(URL, URL);   // Caption = URL, Hint = URL
+        URL2 := ExtractDomainFromURL(URL);
+        AddButton(URL2, URL);   // Caption = URL2, Hint = URL
         SaveButtonsToIni;
       end;
     end
