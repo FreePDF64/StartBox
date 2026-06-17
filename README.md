@@ -15,7 +15,7 @@ oder indirekt aus der Benutzung dieser Software entstehen.
 ToDo:
 - Programme/Dateien/etc. werden per Drag&Drop hinzugefügt
 - Icons werden automatisch aus den Dateien extrahiert
-- Rechtsklick auf Button: Umbenennen oder Löschen
+- Rechtsklick auf Button: Umbenennen, Löschen, als Admin ausführen
 - Schließen (X) minimiert in den System Tray
 - Beenden NUR über das System Tray-Menü
 - Auswahl: Nach Klick auf Buttons minimieren in den System Tray

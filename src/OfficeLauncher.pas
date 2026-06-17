@@ -78,6 +78,7 @@ type
     PopupButton: TPopupMenu;
     MenuDeleteButton: TMenuItem;
     MenuRenameButton: TMenuItem;
+    MenuRunAsAdmin  : TMenuItem;
     ButtonToDelete: TBitBtn;
 
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
@@ -111,6 +112,7 @@ type
     procedure ButtonContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
     procedure MenuDeleteButtonClick(Sender: TObject);
     procedure MenuRenameButtonClick(Sender: TObject);
+    procedure MenuRunAsAdminClick(Sender: TObject);
 
     function  ResolveLnk(const LnkFile: string): string;
 
@@ -174,6 +176,23 @@ begin
     SetForegroundWindow(Handle);      // Fokus erzwingen
     BringWindowToTop(Handle);         // über alle anderen Fenster
   end;
+end;
+
+procedure RunAsAdmin(const FileName, Params: string);
+var
+  Sei: TShellExecuteInfo;
+begin
+  ZeroMemory(@Sei, SizeOf(Sei));
+  Sei.cbSize := SizeOf(Sei);
+  Sei.fMask := SEE_MASK_FLAG_DDEWAIT or SEE_MASK_FLAG_NO_UI;
+  Sei.Wnd := 0;
+  Sei.lpVerb := 'runas'; // ← erzwingt UAC
+  Sei.lpFile := PChar(FileName);
+  Sei.lpParameters := PChar(Params);
+  Sei.nShow := SW_SHOWNORMAL;
+
+  if not ShellExecuteEx(@Sei) then
+    ShowMessage('Starten als Administrator fehlgeschlagen.');
 end;
 
 procedure TForm1.WMHotKey(var Msg: TWMHotKey);
@@ -370,7 +389,7 @@ begin
      'HowTo:' + #13 +
      '- Programme/Dateien/etc. werden per Drag&&Drop hinzugefügt' + #13 +
      '- Icons werden automatisch aus den Dateien extrahiert' + #13 +
-     '- Rechtsklick auf Button: Umbenennen oder Löschen' + #13 +
+     '- Rechtsklick auf Button: Umbenennen, Löschen, als Admin ausführen' + #13 +
      '- Schließen (X) minimiert in den System Tray' + #13 +
      '- Beenden NUR über das Tray-Menü' + #13 +
      '- Auswahl: Nach Klick auf Buttons minimieren in den System Tray' + #13 +
@@ -657,6 +676,7 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 var
   IniPath: string;
+  Sep: TMenuItem;
 begin
   if HotkeyJN.Checked then
     // Hotkey Alt+S
@@ -692,6 +712,16 @@ begin
   MenuRenameButton.Caption := 'Umbenennen';
   MenuRenameButton.OnClick := MenuRenameButtonClick;
   PopupButton.Items.Insert(0, MenuRenameButton);
+
+  Sep := TMenuItem.Create(PopupButton);
+  Sep.Caption := '-';
+  Sep.Enabled := False;
+  PopupButton.Items.Add(Sep);
+
+  MenuRunAsAdmin := TMenuItem.Create(Self);
+  MenuRunAsAdmin.Caption := 'Als Administrator ausführen';
+  MenuRunAsAdmin.OnClick := MenuRunAsAdminClick;
+  PopupButton.Items.Insert(3, MenuRunAsAdmin);
 
   DragAcceptFiles(Handle, True);
 
@@ -909,6 +939,49 @@ begin
   // Unten korrigieren
   if F.Top + F.Height > R.Bottom then
     F.Top := R.Bottom - F.Height;
+end;
+
+procedure TForm1.MenuRunAsAdminClick(Sender: TObject);
+var
+  dlg: TForm;
+  res: Integer;
+  p: TPoint;
+  MsgText: string;
+  ExePath: string;
+begin
+  if ButtonToDelete = nil then Exit;
+
+  // EXE-Pfad aus dem Button holen (du speicherst ihn im Hint)
+  ExePath := ButtonToDelete.Hint;
+  if ExePath = '' then Exit;
+
+  // Text dynamisch erzeugen
+  MsgText := 'Als Administrator ausführen:' + sLineBreak +
+             '"' + ButtonToDelete.Caption + '"';
+
+  // Dialog erzeugen
+  dlg := CreateMessageDialog(MsgText, mtConfirmation, [mbYes, mbNo]);
+
+  try
+    // Position des Buttons in Bildschirmkoordinaten
+    p := ButtonToDelete.ClientToScreen(Point(0, 0));
+
+    dlg.Position := poDesigned;
+    dlg.Left := p.X;
+    dlg.Top := p.Y + ButtonToDelete.Height + 10;
+
+    KeepFormOnScreen(dlg);
+    res := dlg.ShowModal;
+
+    if res <> mrYes then
+      Exit;
+
+    // Jetzt als Administrator starten
+    RunAsAdmin(ExePath, '');
+
+  finally
+    dlg.Free;
+  end;
 end;
 
 procedure TForm1.MenuDeleteButtonClick(Sender: TObject);
