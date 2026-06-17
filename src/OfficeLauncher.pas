@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   14.06.2026
+// Ende:   17.06.2026
 //
 
 unit OfficeLauncher;
@@ -780,17 +780,6 @@ begin
   Result := (A.Top < B.Top + B.Height) and (A.Top + A.Height > B.Top);
 end;
 
-procedure TForm1.SwapButtons(A, B: TBitBtn);
-var IA, IB: Integer; Tmp: TBitBtn;
-begin
-  IA := Buttons.IndexOf(A);
-  IB := Buttons.IndexOf(B);
-  Tmp := Buttons[IA];
-  Buttons[IA] := Buttons[IB];
-  Buttons[IB] := Tmp;
-  RecalculateButtonPositions;
-end;
-
 procedure TForm1.ButtonMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
@@ -798,19 +787,47 @@ begin
 
   DragButton := TBitBtn(Sender);
 
-  // Startwerte setzen
   DragStartTime := GetTickCount;
   DragStartPos := Point(X, Y);
   IsDragging := False;
 
-  // Offset für visuelles Verschieben
   DragOffsetX := X;
   DragOffsetY := Y;
 
-  // Für Click-Blockierung
   DragTotalMove := 0;
+end;
 
-  LastSwapButton := nil;
+procedure TForm1.SwapButtons(A, B: TBitBtn);
+var
+  IA, IB: Integer;
+  DragMid, TargetMid: Integer;
+begin
+  IA := Buttons.IndexOf(A);
+  IB := Buttons.IndexOf(B);
+
+  // Vertikale Mitte der Buttons
+  DragMid := A.Top + A.Height div 2;
+  TargetMid := B.Top + B.Height div 2;
+
+  // Swap nur erlauben, wenn DragButton wirklich über/unter dem Ziel liegt
+  // → verhindert seitliches Swappen
+  if DragMid < TargetMid - (B.Height div 4) then
+  begin
+    // A kommt von oben → Swap nach unten
+  end
+  else if DragMid > TargetMid + (B.Height div 4) then
+  begin
+    // A kommt von unten → Swap nach oben
+  end
+  else
+    Exit; // kein gültiger vertikaler Swap
+
+  // Reihenfolge in der Liste tauschen
+  Buttons[IA] := B;
+  Buttons[IB] := A;
+
+  // Layout SOFORT neu setzen
+  RecalculateButtonPositions;
 end;
 
 procedure TForm1.ButtonMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -860,8 +877,8 @@ procedure TForm1.ButtonMouseUp(Sender: TObject; Button: TMouseButton;
 begin
   IsDragging := False;
   DragButton := nil;
-  LastSwapButton := nil;
-  RecalculateButtonPositions;
+
+  RecalculateButtonPositions;  // ordnet wieder sauber ein
 end;
 
 procedure TForm1.ButtonContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);

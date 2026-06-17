@@ -24,10 +24,9 @@ EditWindowCount=1
 ModuleType=TSourceModule
 
 [EditWindow0]
-ViewCount=2
+ViewCount=1
 CurrentEditView=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
 View0=0
-View1=1
 PercentageSizes=1
 Create=1
 Visible=1
@@ -62,18 +61,14 @@ BottomMiddlePanelClients=DockSite0,GraphDrawingModel
 BottomMiddelPanelData=0000080001020200000009000000446F636B536974653010000000477261706844726177696E67566965779F1D00000000000002F206000000000000FFFFFFFF
 
 [View0]
-CustomEditViewType=TOTACustomEditView
-OTAEditViewType=WelcomePage.MainPage
-
-[View1]
 CustomEditViewType=TEditView
 Module=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
-CursorX=91
-CursorY=1094
-TopLine=1054
+CursorX=1
+CursorY=1
+TopLine=1
 LeftCol=1
 Elisions=
-Bookmarks={0,454,27}{1,1076,1}
+Bookmarks={0,454,27}{1,1098,1}
 EditViewName=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
 
 [Watches]
@@ -300,8 +295,8 @@ TBDockHeight=362
 LRDockWidth=273
 Dockable=1
 StayOnTop=0
-Name=8
-Description=11
+Name=62
+Description=171
 filter=1
 
 [DebugLogView]
