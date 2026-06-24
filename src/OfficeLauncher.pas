@@ -735,9 +735,9 @@ begin
 
   // *** Icongröße abhängig von DPI ***
   if Scale <= 1.30 then
-    IconSize := 24      // WQHD
+    IconSize := 16        // WQHD → kleiner
   else
-    IconSize := 32;     // 4K
+    IconSize := 32;       // 4K → unverändert
 
   // *** URL‑Icon aus der ImageList sichern ***
   UrlIcon := TIcon.Create;
