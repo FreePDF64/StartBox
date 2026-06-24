@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   17.06.2026
+// Ende:   24.06.2026
 //
 
 unit OfficeLauncher;
@@ -16,7 +16,7 @@ uses
   Winapi.ShlObj, Vcl.Dialogs, Registry,
   System.SysUtils, System.Classes, System.IniFiles,
   Vcl.Forms, Vcl.Controls, Vcl.StdCtrls, Vcl.Buttons,
-  Vcl.ExtCtrls, Vcl.ImgList, Vcl.Menus,
+  Vcl.ExtCtrls, Vcl.ImgList, Vcl.Menus, Math,
   System.Generics.Collections, System.ImageList;
 
 type
@@ -53,6 +53,7 @@ type
     procedure RestoreClick(Sender: TObject);
     procedure HotkeyJNClick(Sender: TObject);
     procedure AutostartJNClick(Sender: TObject);
+    procedure DialogEscHandler(Sender: TObject; var Key: Word; Shift: TShiftState);
 
   private
     Ini: TIniFile;
@@ -129,6 +130,15 @@ var
   DragThreshold: Integer = 4; // Pixel
   Dragging: Boolean = False;
 
+  Scale: Single;
+  ButtonHeight: Integer;
+  ButtonSpacing: Integer;
+  OuterMargin: Integer;
+
+  BaseButtonHeight  : Integer = 40;
+  BaseButtonSpacing : Integer = 6;
+  BaseOuterMargin   : Integer = 10;
+
 implementation
 
 {$R *.dfm}
@@ -148,9 +158,9 @@ const
     (Exe: 'onenote.exe'; Caption: 'OneNote'),
     (Exe: 'msaccess.exe';Caption: 'Access')
   );
-  ButtonWidth   = 200;
-  ButtonHeight  = 40;
-  ButtonSpacing = 10;
+//  ButtonWidth   = 200;
+//  ButtonHeight  = 40;
+//  ButtonSpacing = 10;
   HOTKEY_ID     = 1;
 
 // Ist die Hauptform im Vordergrund?
@@ -175,6 +185,15 @@ begin
     Restore.Click;
     SetForegroundWindow(Handle);      // Fokus erzwingen
     BringWindowToTop(Handle);         // über alle anderen Fenster
+  end;
+end;
+
+procedure TForm1.DialogEscHandler(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if Key = VK_ESCAPE then
+  begin
+    Key := 0;
+    (Sender as TForm).ModalResult := mrNo;
   end;
 end;
 
@@ -222,7 +241,6 @@ function TForm1.WouldExceedScreenHeight: Boolean;
 var
   NeededHeight: Integer;
 begin
-  // Höhe, die nach dem Hinzufügen eines Buttons benötigt wird
   NeededHeight :=
     OuterMargin +
     (Buttons.Count + 1) * (ButtonHeight + ButtonSpacing);
@@ -379,7 +397,7 @@ end;
 procedure TForm1.MenuHelpClick(Sender: TObject);
 begin
   MessageDlgBottomRight
-    ('StartBox Version 1.2' + #13 + #13 +
+    ('StartBox Version 1.3' + #13 + #13 +
      'Copyright © 2026 by FreePDF64@outlook.com' + #13 +
      'Website -> https://github.com/FreePDF64/StartBox' + #13 + #13 +
      'StartBox darf sowohl im privaten als auch im kommerziellen' + #13 +
@@ -426,16 +444,15 @@ begin
   Result := '';
 end;
 
-function ExtractShellIconToImageList(const FileName: string; ImageList: TImageList): Integer;
+function ExtractShellIconToImageList(const FileName: string; ImageList: TImageList; CurrentPPI: Integer): Integer;
 var
   SFI: SHFILEINFO;
   Icon: TIcon;
 begin
   Result := -1;
 
-  // Shell-Icon für die Datei holen (16x16)
   if SHGetFileInfo(PChar(FileName), 0, SFI, SizeOf(SFI),
-     SHGFI_ICON or SHGFI_SMALLICON) = 0 then
+     SHGFI_ICON or SHGFI_LARGEICON) = 0 then
     Exit;
 
   Icon := TIcon.Create;
@@ -446,7 +463,6 @@ begin
     Icon.Free;
   end;
 
-  // Icon-Handle freigeben
   DestroyIcon(SFI.hIcon);
 end;
 
@@ -455,8 +471,10 @@ var
   Btn: TBitBtn;
   IconIndex: Integer;
   Cap: string;
+  Scale: Single;
 begin
-  // Prüfen, ob der neue Button die Form zu hoch machen würde
+  Scale := CurrentPPI / 96;
+
   if WouldExceedScreenHeight then
   begin
     MessageDlg(
@@ -477,31 +495,40 @@ begin
     else
       Cap := Caption;
 
-    // WICHTIG: Glyph deaktivieren, sonst wird Images ignoriert
-    Btn.Glyph      := NIL;
-    Btn.Images     := ImageList1;
-    Btn.ImageIndex := 0;
-  end else
+    Btn.Glyph := nil;
+    Btn.Images := ImageList1;
+    Btn.ImageIndex := 0;           // dein URL-Icon
+  end
+  else
   begin
     Cap := Caption;
-    // Icons bei alle anderen Dateien...
-    begin
-      IconIndex := ExtractShellIconToImageList(ExeName, ImageList1);
-      Btn.Images := ImageList1;
-      Btn.ImageIndex := IconIndex;
-    end;
+    IconIndex := ExtractShellIconToImageList(ExeName, ImageList1, CurrentPPI);
+    Btn.Images := ImageList1;
+    Btn.ImageIndex := IconIndex;   // individuelles Programm-Icon
   end;
 
   Btn.Caption := Cap;
   Btn.Hint := ExeName;
   Btn.ShowHint := True;
+
   Btn.Font.Name := 'Segoe UI';
-  Btn.Font.Size := 9;
+
+  // Schrift: WQHD größer, 4K wie gehabt
+  if Scale <= 1.30 then
+    Btn.Font.Size := Max(Round(8.5 * Power(Scale, 0.22)), 8)   // WQHD
+  else
+    Btn.Font.Size := Max(Round(7 * Power(Scale, 0.22)), 7);    // 4K
+
   Btn.Height := ButtonHeight;
+  Btn.Width  := 200;
+
+  Btn.Spacing := ButtonSpacing;
+  Btn.Margin  := ButtonSpacing;
+
+  Btn.Layout := blGlyphLeft;
 
   Btn.PopupMenu := PopupButton;
   Btn.OnContextPopup := ButtonContextPopup;
-
   Btn.OnMouseDown := ButtonMouseDown;
   Btn.OnMouseMove := ButtonMouseMove;
   Btn.OnMouseUp := ButtonMouseUp;
@@ -639,23 +666,28 @@ var
 begin
   if Buttons.Count = 0 then Exit;
 
-  Y := 10;
+  Y := OuterMargin;
   MaxWidth := Buttons[0].Width;
 
   for I := 0 to Buttons.Count - 1 do
   begin
-    Buttons[I].Left := 10;
-    Buttons[I].Top := Y;
-    Y := Y + Buttons[I].Height + 6;
+    Buttons[I].Left := OuterMargin;
+    Buttons[I].Top  := Y;
+
+    Y := Y + ButtonHeight + ButtonSpacing;
 
     if Buttons[I].Width > MaxWidth then
       MaxWidth := Buttons[I].Width;
   end;
 
-  // Formhöhe dynamisch
-  ClientHeight := Y + 5;
-  // Formbreite dynamisch
-  ClientWidth := MaxWidth + 20; // 10px links + 10px rechts
+  // letztes ButtonSpacing entfernen
+  Y := Y - ButtonSpacing;
+
+  // unten exakt so viel Rand wie links/rechts
+  ClientHeight := Y + OuterMargin;
+
+  // Breite bleibt symmetrisch
+  ClientWidth := MaxWidth + OuterMargin * 2;
 end;
 
 function TForm1.ButtonExistsForExe(const Exe: string): Boolean;
@@ -677,41 +709,73 @@ procedure TForm1.FormCreate(Sender: TObject);
 var
   IniPath: string;
   Sep: TMenuItem;
+  Scale: Single;
+  IconSize: Integer;
+  UrlIcon: TIcon;
 begin
-  if HotkeyJN.Checked then
-    // Hotkey Alt+S
-    RegisterHotKey(Handle, HOTKEY_ID, MOD_ALT, Ord('S'));
+  Scale := Self.CurrentPPI / 96;
+
+  // DPI‑skalierte Basiswerte
+  ButtonHeight  := Round(BaseButtonHeight  * Scale);
+  ButtonSpacing := Round(BaseButtonSpacing * Scale);
+  OuterMargin   := Round(BaseOuterMargin   * Scale);
 
   BorderIcons := BorderIcons - [biMaximize];
   CoInitialize(nil);
 
-  Application.HintPause := 700;       // Verzögerung bis Tooltip erscheint
-  Application.HintHidePause := 5000;  // Wie lange der Tooltip sichtbar bleibt
-  DragDelay := 300;                   // Verzögerung von Drag&Drop in Millisekunden
+  Application.HintPause := 700;
+  Application.HintHidePause := 5000;
+  DragDelay := 300;
 
   IniPath := ChangeFileExt(Application.ExeName, '.ini');
   Ini := TIniFile.Create(IniPath);
   Buttons := TList<TBitBtn>.Create;
 
-  OuterMargin := 12;
-  ButtonHeight := 50;
-  ButtonSpacing := 10;
   ForceClose := False;
 
-  ImageList1.Width  := 16;
-  ImageList1.Height := 16;
-  ImageList1.ColorDepth := cd32Bit;
-  ImageList1.Masked := True;
+  // *** Icongröße abhängig von DPI ***
+  if Scale <= 1.30 then
+    IconSize := 24      // WQHD
+  else
+    IconSize := 32;     // 4K
 
+  // *** URL‑Icon aus der ImageList sichern ***
+  UrlIcon := TIcon.Create;
+  try
+    // WICHTIG: Icon aus Index 0 auslesen
+    ImageList1.GetIcon(0, UrlIcon);
+  except
+    UrlIcon := nil;
+  end;
+
+  // *** ImageList neu initialisieren ***
+  ImageList1.Clear;  // jetzt ist sie leer
+
+  ImageList1.ColorDepth := cd32bit;
+  ImageList1.Masked := False;
+  ImageList1.DrawingStyle := dsTransparent;
+  ImageList1.BkColor := clNone;
+  ImageList1.Width  := IconSize;
+  ImageList1.Height := IconSize;
+
+  // *** URL‑Icon wieder als Index 0 einfügen ***
+  if Assigned(UrlIcon) then
+    ImageList1.AddIcon(UrlIcon);   // garantiert Index 0
+
+  UrlIcon.Free;
+
+  // Popup-Menü
   PopupButton := TPopupMenu.Create(Self);
+
+  MenuRenameButton := TMenuItem.Create(Self);
+  MenuRenameButton.Caption := 'Umbenennen';
+  MenuRenameButton.OnClick := MenuRenameButtonClick;
+  PopupButton.Items.Add(MenuRenameButton);
+
   MenuDeleteButton := TMenuItem.Create(Self);
   MenuDeleteButton.Caption := 'Löschen';
   MenuDeleteButton.OnClick := MenuDeleteButtonClick;
   PopupButton.Items.Add(MenuDeleteButton);
-  MenuRenameButton := TMenuItem.Create(Self);
-  MenuRenameButton.Caption := 'Umbenennen';
-  MenuRenameButton.OnClick := MenuRenameButtonClick;
-  PopupButton.Items.Insert(0, MenuRenameButton);
 
   Sep := TMenuItem.Create(PopupButton);
   Sep.Caption := '-';
@@ -721,17 +785,24 @@ begin
   MenuRunAsAdmin := TMenuItem.Create(Self);
   MenuRunAsAdmin.Caption := 'Als Administrator ausführen';
   MenuRunAsAdmin.OnClick := MenuRunAsAdminClick;
-  PopupButton.Items.Insert(3, MenuRunAsAdmin);
+  PopupButton.Items.Add(MenuRunAsAdmin);
 
   DragAcceptFiles(Handle, True);
 
   ShowHint := True;
 
   LoadFormPosition;
+
+  if HotkeyJN.Checked then
+    RegisterHotKey(Handle, HOTKEY_ID, MOD_ALT, Ord('S'))
+  else
+    UnregisterHotKey(Handle, HOTKEY_ID);
+
   OfficeEdition := DetectOfficeEdition;
 
-  LoadButtonsFromIni;     // Benutzerdefinierte Buttons
-  LoadOfficeButtons;      // Office automatisch hinzufügen
+  // *** Jetzt erst Buttons laden ***
+  LoadButtonsFromIni;
+  LoadOfficeButtons;
 
   if Buttons.Count = 0 then
     MessageDlg('Bitte Anwendungen/Dateien/etc. hinzufügen per Drag&Drop.', mtInformation, [mbOK], 0);
@@ -905,6 +976,12 @@ end;
 procedure TForm1.ButtonMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
+  if (Button = mbLeft) and IsDragging then
+  begin
+    // Button wurde verschoben und Maustaste wurde losgelassen
+    SaveButtonsToIni;
+  end;
+
   IsDragging := False;
   DragButton := nil;
 
@@ -944,37 +1021,108 @@ end;
 procedure TForm1.MenuRunAsAdminClick(Sender: TObject);
 var
   dlg: TForm;
-  res: Integer;
+  lbl: TLabel;
+  btnYes, btnNo: TButton;
   p: TPoint;
+  res: Integer;
+  Scale: Single;
   MsgText: string;
   ExePath: string;
+  BtnW, BtnH, Spacing: Integer;
+  PaddingY: Integer;
+  TextH: Integer;
+  BottomPadding: Integer;
+  LabelBottom: Integer;
 begin
   if ButtonToDelete = nil then Exit;
 
-  // EXE-Pfad aus dem Button holen (du speicherst ihn im Hint)
+  // EXE-Pfad aus dem Button holen
   ExePath := ButtonToDelete.Hint;
   if ExePath = '' then Exit;
 
+  // DPI-Faktor
+  Scale := Self.CurrentPPI / 96;
+
+  // Basiswerte
+  BtnW := Max(Round(90 * Scale), 90);
+  Spacing := Round(10 * Scale);
+  PaddingY := Round(4 * Scale);
+  BottomPadding := Round(10 * Scale);
+
   // Text dynamisch erzeugen
-  MsgText := 'Als Administrator ausführen:' + sLineBreak +
-             '"' + ButtonToDelete.Caption + '"';
+  MsgText := 'Als Administrator ausführen:' + '   ' + sLineBreak + '"' + ButtonToDelete.Caption + '"';
 
-  // Dialog erzeugen
-  dlg := CreateMessageDialog(MsgText, mtConfirmation, [mbYes, mbNo]);
-
+  dlg := TForm.Create(Self);
   try
-    // Position des Buttons in Bildschirmkoordinaten
-    p := ButtonToDelete.ClientToScreen(Point(0, 0));
+    dlg.KeyPreview := True;
+    dlg.OnKeyDown := DialogEscHandler;
 
+    dlg.BorderStyle := bsDialog;
+    dlg.Caption := 'Administrator';
     dlg.Position := poDesigned;
+
+    dlg.ClientWidth := Max(Round(280 * Scale), 280);
+
+    // Label
+    lbl := TLabel.Create(dlg);
+    lbl.Parent := dlg;
+    lbl.Caption := MsgText;
+    lbl.Left := Round(10 * Scale);
+    lbl.Top  := Round(10 * Scale);
+    lbl.Width := dlg.ClientWidth - Round(20 * Scale);
+    lbl.WordWrap := True;
+
+    // Ja-Button
+    btnYes := TButton.Create(dlg);
+    btnYes.Parent := dlg;
+    btnYes.Caption := 'Ja';
+    btnYes.ModalResult := mrYes;
+    btnYes.Width := BtnW;
+
+    // Nein-Button
+    btnNo := TButton.Create(dlg);
+    btnNo.Parent := dlg;
+    btnNo.Caption := 'Nein';
+    btnNo.ModalResult := mrNo;
+    btnNo.Width := BtnW;
+
+    // Texthöhe über Font.Height
+    TextH := Abs(btnYes.Font.Height);
+
+    // Automatische Buttonhöhe
+    BtnH := Max(TextH + PaddingY * 2, 24);
+
+    btnYes.Height := BtnH;
+    btnNo.Height := BtnH;
+
+    btnYes.Padding.Top := PaddingY;
+    btnYes.Padding.Bottom := PaddingY;
+
+    btnNo.Padding.Top := PaddingY;
+    btnNo.Padding.Bottom := PaddingY;
+
+    // Unterkante des Labels bestimmen
+    LabelBottom := lbl.Top + lbl.Height;
+
+    // Buttons direkt unter dem Label, rechtsbündig
+    btnNo.Left := dlg.ClientWidth - BtnW - Spacing;
+    btnNo.Top  := LabelBottom + (Spacing);  // Abstand vergrößert
+
+    btnYes.Left := btnNo.Left - BtnW - Spacing;
+    btnYes.Top  := btnNo.Top;
+
+    // Dialoghöhe exakt anpassen → unterer Rand kurz unter Buttons
+    dlg.ClientHeight := btnNo.Top + BtnH + BottomPadding;
+
+    // Dialog unterhalb des Buttons anzeigen
+    p := ButtonToDelete.ClientToScreen(Point(0, 0));
     dlg.Left := p.X;
-    dlg.Top := p.Y + ButtonToDelete.Height + 10;
+    dlg.Top := p.Y + ButtonToDelete.Height + Round(10 * Scale);
 
     KeepFormOnScreen(dlg);
     res := dlg.ShowModal;
 
-    if res <> mrYes then
-      Exit;
+    if res <> mrYes then Exit;
 
     // Jetzt als Administrator starten
     RunAsAdmin(ExePath, '');
@@ -987,33 +1135,103 @@ end;
 procedure TForm1.MenuDeleteButtonClick(Sender: TObject);
 var
   dlg: TForm;
-  res: Integer;
+  lbl: TLabel;
+  btnYes, btnNo: TButton;
   p: TPoint;
+  res: Integer;
+  Scale: Single;
   MsgText: string;
+  BtnW, BtnH, Spacing: Integer;
+  PaddingY: Integer;
+  TextH: Integer;
+  BottomPadding: Integer;
+  LabelBottom: Integer;
 begin
   if ButtonToDelete = nil then Exit;
 
+  // DPI-Faktor
+  Scale := Self.CurrentPPI / 96;
+
+  // Basiswerte
+  BtnW := Max(Round(90 * Scale), 90);
+  Spacing := Round(10 * Scale);
+  PaddingY := Round(4 * Scale);
+  BottomPadding := Round(10 * Scale);
+
   // Text dynamisch erzeugen
-  MsgText := 'Button löschen: "' + ButtonToDelete.Caption + '"';
+  MsgText := 'Button löschen:' + '   ' + sLineBreak + '"' + ButtonToDelete.Caption + '"';
 
-  // Dialog erzeugen
-  dlg := CreateMessageDialog(MsgText, mtConfirmation, [mbYes, mbNo]);
-
+  dlg := TForm.Create(Self);
   try
-    // Position des Buttons in Bildschirmkoordinaten
-    p := ButtonToDelete.ClientToScreen(Point(0, 0));
+    dlg.KeyPreview := True;
+    dlg.OnKeyDown := DialogEscHandler;
 
+    dlg.BorderStyle := bsDialog;
+    dlg.Caption := 'Löschen';
     dlg.Position := poDesigned;
-    // X = gleiche linke Position wie der Button
+
+    dlg.ClientWidth := Max(Round(280 * Scale), 280);
+
+    // Label
+    lbl := TLabel.Create(dlg);
+    lbl.Parent := dlg;
+    lbl.Caption := MsgText;
+    lbl.Left := Round(10 * Scale);
+    lbl.Top  := Round(10 * Scale);
+    lbl.Width := dlg.ClientWidth - Round(20 * Scale);
+    lbl.WordWrap := True;
+
+    // Ja-Button
+    btnYes := TButton.Create(dlg);
+    btnYes.Parent := dlg;
+    btnYes.Caption := 'Ja';
+    btnYes.ModalResult := mrYes;
+    btnYes.Width := BtnW;
+
+    // Nein-Button
+    btnNo := TButton.Create(dlg);
+    btnNo.Parent := dlg;
+    btnNo.Caption := 'Nein';
+    btnNo.ModalResult := mrNo;
+    btnNo.Width := BtnW;
+
+    // Texthöhe über Font.Height
+    TextH := Abs(btnYes.Font.Height);
+
+    // Automatische Buttonhöhe
+    BtnH := Max(TextH + PaddingY * 2, 24);
+
+    btnYes.Height := BtnH;
+    btnNo.Height := BtnH;
+
+    btnYes.Padding.Top := PaddingY;
+    btnYes.Padding.Bottom := PaddingY;
+
+    btnNo.Padding.Top := PaddingY;
+    btnNo.Padding.Bottom := PaddingY;
+
+    // Unterkante des Labels bestimmen
+    LabelBottom := lbl.Top + lbl.Height;
+
+    // Buttons direkt unter dem Label, rechtsbündig
+    btnNo.Left := dlg.ClientWidth - BtnW - Spacing;
+    btnNo.Top  := LabelBottom + (Spacing);  // Abstand vergrößert
+
+    btnYes.Left := btnNo.Left - BtnW - Spacing;
+    btnYes.Top  := btnNo.Top;
+
+    // Dialoghöhe exakt anpassen → unterer Rand kurz unter Buttons
+    dlg.ClientHeight := btnNo.Top + BtnH + BottomPadding;
+
+    // Dialog unterhalb des Buttons anzeigen
+    p := ButtonToDelete.ClientToScreen(Point(0, 0));
     dlg.Left := p.X;
-    // Y = unterhalb des Buttons
-    dlg.Top := p.Y + ButtonToDelete.Height + 10;
-    // Dialog anzeigen
+    dlg.Top := p.Y + ButtonToDelete.Height + Round(10 * Scale);
+
     KeepFormOnScreen(dlg);
     res := dlg.ShowModal;
 
-    if res <> mrYes then
-      Exit;
+    if res <> mrYes then Exit;
 
     // Button löschen
     Buttons.Remove(ButtonToDelete);
@@ -1036,31 +1254,48 @@ var
   btnOK, btnCancel: TButton;
   p: TPoint;
   res: Integer;
+  Scale: Single;
+  BtnW, BtnH, Spacing: Integer;
+  PaddingY: Integer;
+  TextH: Integer;
+  BottomPadding: Integer;
 begin
   if ButtonToDelete = nil then Exit;
 
-  // Dialog erzeugen
+  // DPI-Faktor
+  Scale := Self.CurrentPPI / 96;
+
+  // Basiswerte
+  BtnW := Max(Round(90 * Scale), 90);
+  Spacing := Round(10 * Scale);
+  PaddingY := Round(4 * Scale);
+  BottomPadding := Round(10 * Scale);  // kleiner Abstand zum unteren Rand
+
   dlg := TForm.Create(Self);
   try
+    dlg.KeyPreview := True;
+    dlg.OnKeyDown := DialogEscHandler;
+
     dlg.BorderStyle := bsDialog;
     dlg.Caption := 'Umbenennen';
     dlg.Position := poDesigned;
-    dlg.ClientWidth := 260;
-    dlg.ClientHeight := 120;
+
+    dlg.ClientWidth := Max(Round(280 * Scale), 280);
 
     // Label
     lbl := TLabel.Create(dlg);
     lbl.Parent := dlg;
     lbl.Caption := 'Neuer Name:';
-    lbl.Left := 10;
-    lbl.Top := 10;
+    lbl.Left := Round(10 * Scale);
+    lbl.Top  := Round(10 * Scale);
 
     // Eingabefeld
     edt := TEdit.Create(dlg);
     edt.Parent := dlg;
-    edt.Left := 10;
-    edt.Top := 30;
-    edt.Width := dlg.ClientWidth - 20;
+    edt.Left := Round(10 * Scale);
+    edt.Top  := Round(35 * Scale);
+    edt.Width := dlg.ClientWidth - Round(20 * Scale);
+    edt.Height := Max(Round(26 * Scale), 26);
     edt.Text := ButtonToDelete.Caption;
 
     // OK-Button
@@ -1068,42 +1303,57 @@ begin
     btnOK.Parent := dlg;
     btnOK.Caption := 'OK';
     btnOK.ModalResult := mrOk;
-    btnOK.Left := dlg.ClientWidth - 220;
-    btnOK.Top := 80;
-    btnOK.Width := 100;
+    btnOK.Width := BtnW;
 
-    // Abbrechen-Button
+    // Cancel-Button
     btnCancel := TButton.Create(dlg);
     btnCancel.Parent := dlg;
     btnCancel.Caption := 'Abbrechen';
     btnCancel.ModalResult := mrCancel;
-    btnCancel.Left := dlg.ClientWidth - 110;
-    btnCancel.Top := 80;
-    btnCancel.Width := 100;
+    btnCancel.Width := BtnW;
 
-    // Position unterhalb des Buttons
+    // Texthöhe über Font.Height
+    TextH := Abs(btnOK.Font.Height);
+
+    // Automatische Buttonhöhe
+    BtnH := Max(TextH + PaddingY * 2, 24);
+
+    btnOK.Height := BtnH;
+    btnCancel.Height := BtnH;
+
+    btnOK.Padding.Top := PaddingY;
+    btnOK.Padding.Bottom := PaddingY;
+
+    btnCancel.Padding.Top := PaddingY;
+    btnCancel.Padding.Bottom := PaddingY;
+
+    // Buttons direkt unter TEdit, rechtsbündig
+    btnCancel.Left := dlg.ClientWidth - BtnW - Spacing;
+    btnCancel.Top  := edt.Top + edt.Height + Spacing;
+
+    btnOK.Left := btnCancel.Left - BtnW - Spacing;
+    btnOK.Top  := btnCancel.Top;
+
+    // Dialoghöhe exakt anpassen → unterer Rand kurz unter Buttons
+    dlg.ClientHeight :=
+      btnCancel.Top + BtnH + BottomPadding;
+
+    // Dialog unterhalb des Buttons anzeigen
     p := ButtonToDelete.ClientToScreen(Point(0, 0));
     dlg.Left := p.X;
-    dlg.Top := p.Y + ButtonToDelete.Height + 10;
+    dlg.Top := p.Y + ButtonToDelete.Height + Round(10 * Scale);
 
-    // Dialog anzeigen
     KeepFormOnScreen(dlg);
     res := dlg.ShowModal;
 
-    if res <> mrOk then
-      Exit;
+    if res <> mrOk then Exit;
+    if Trim(edt.Text) = '' then Exit;
 
-    if Trim(edt.Text) = '' then
-      Exit;
-
-    // Neuen Namen setzen
     ButtonToDelete.Caption := edt.Text;
 
-    // Layout aktualisieren
     RecalculateButtonWidths;
     RecalculateButtonPositions;
 
-    // Speichern
     SaveButtonsToIni;
   finally
     dlg.Free;

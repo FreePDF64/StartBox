@@ -24,6 +24,7 @@ begin
     Halt;
   end;
 
+  SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TForm1, Form1);
