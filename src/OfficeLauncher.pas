@@ -652,8 +652,15 @@ var
 begin
   if Buttons.Count = 0 then Exit;
 
+  // optimale Breite berechnen
   NewWidth := CalculateOptimalButtonWidth;
 
+  // etwas kleiner machen (z. B. 20px)
+  NewWidth := NewWidth - 20;
+  if NewWidth < 50 then
+    NewWidth := 50; // Sicherheitsgrenze
+
+  // auf alle Buttons anwenden
   for I := 0 to Buttons.Count - 1 do
     Buttons[I].Width := NewWidth;
 end;
@@ -716,12 +723,14 @@ begin
   Scale := Self.CurrentPPI / 96;
 
   // DPI-skalierte Basiswerte
-//  ButtonHeight  := Round(BaseButtonHeight  * Scale);
-//  ButtonSpacing := Round(BaseButtonSpacing * Scale);
-//  OuterMargin   := Round(BaseOuterMargin   * Scale);
+{
+  ButtonHeight  := Round(BaseButtonHeight  * Scale);
+  ButtonSpacing := Round(BaseButtonSpacing * Scale);
+  OuterMargin   := Round(BaseOuterMargin   * Scale);
+}
   ButtonHeight := Round(36 * Scale);     // vorher z.B. 30–34 → jetzt etwas kleiner
-  ButtonSpacing := Round(4 * Scale);     // Abstand zwischen Buttons kleiner
-  OuterMargin := Round(6 * Scale);       // Abstand zu den Rändern kleiner
+  ButtonSpacing := Round(5 * Scale);     // Abstand zwischen Buttons kleiner
+  OuterMargin := Round(7 * Scale);       // Abstand zu den Rändern kleiner
 
   BorderIcons := BorderIcons - [biMaximize];
   CoInitialize(nil);
