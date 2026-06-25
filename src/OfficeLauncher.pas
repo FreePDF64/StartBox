@@ -729,8 +729,8 @@ begin
   OuterMargin   := Round(BaseOuterMargin   * Scale);
 }
   ButtonHeight := Round(36 * Scale);     // vorher z.B. 30–34 → jetzt etwas kleiner
-  ButtonSpacing := Round(5 * Scale);     // Abstand zwischen Buttons kleiner
-  OuterMargin := Round(7 * Scale);       // Abstand zu den Rändern kleiner
+  ButtonSpacing := Round(2 * Scale);     // Abstand zwischen Buttons kleiner
+  OuterMargin := Round(5 * Scale);       // Abstand zu den Rändern kleiner
 
   BorderIcons := BorderIcons - [biMaximize];
   CoInitialize(nil);
