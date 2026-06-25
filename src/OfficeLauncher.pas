@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   24.06.2026
+// Ende:   25.06.2026
 //
 
 unit OfficeLauncher;
@@ -715,10 +715,13 @@ var
 begin
   Scale := Self.CurrentPPI / 96;
 
-  // DPI‑skalierte Basiswerte
-  ButtonHeight  := Round(BaseButtonHeight  * Scale);
-  ButtonSpacing := Round(BaseButtonSpacing * Scale);
-  OuterMargin   := Round(BaseOuterMargin   * Scale);
+  // DPI-skalierte Basiswerte
+//  ButtonHeight  := Round(BaseButtonHeight  * Scale);
+//  ButtonSpacing := Round(BaseButtonSpacing * Scale);
+//  OuterMargin   := Round(BaseOuterMargin   * Scale);
+  ButtonHeight := Round(36 * Scale);     // vorher z.B. 30–34 → jetzt etwas kleiner
+  ButtonSpacing := Round(4 * Scale);     // Abstand zwischen Buttons kleiner
+  OuterMargin := Round(6 * Scale);       // Abstand zu den Rändern kleiner
 
   BorderIcons := BorderIcons - [biMaximize];
   CoInitialize(nil);
@@ -739,7 +742,7 @@ begin
   else
     IconSize := 32;       // 4K → unverändert
 
-  // *** URL‑Icon aus der ImageList sichern ***
+  // *** URL-Icon aus der ImageList sichern ***
   UrlIcon := TIcon.Create;
   try
     // WICHTIG: Icon aus Index 0 auslesen
@@ -758,7 +761,7 @@ begin
   ImageList1.Width  := IconSize;
   ImageList1.Height := IconSize;
 
-  // *** URL‑Icon wieder als Index 0 einfügen ***
+  // *** URL-Icon wieder als Index 0 einfügen ***
   if Assigned(UrlIcon) then
     ImageList1.AddIcon(UrlIcon);   // garantiert Index 0
 
