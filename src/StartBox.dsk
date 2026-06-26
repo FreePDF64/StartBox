@@ -63,9 +63,9 @@ BottomMiddelPanelData=0000080001020200000009000000446F636B5369746530100000004772
 [View0]
 CustomEditViewType=TEditView
 Module=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
-CursorX=25
-CursorY=733
-TopLine=706
+CursorX=14
+CursorY=7
+TopLine=1
 LeftCol=1
 Elisions=
 Bookmarks={0,468,1}{1,1190,1}
@@ -295,8 +295,8 @@ TBDockHeight=362
 LRDockWidth=273
 Dockable=1
 StayOnTop=0
-Name=32
-Description=88
+Name=62
+Description=171
 filter=1
 
 [DebugLogView]
