@@ -134,9 +134,9 @@ var
   Dragging: Boolean = False;
 
   Scale: Single;
-  ButtonHeight: Integer;
+  ButtonHeight : Integer;
   ButtonSpacing: Integer;
-  OuterMargin: Integer;
+  OuterMargin  : Integer;
 
   BaseButtonHeight  : Integer = 40;
   BaseButtonSpacing : Integer = 6;
@@ -737,11 +737,6 @@ begin
   Scale := Self.CurrentPPI / 96;
 
   // DPI-skalierte Basiswerte
-{
-  ButtonHeight  := Round(BaseButtonHeight  * Scale);
-  ButtonSpacing := Round(BaseButtonSpacing * Scale);
-  OuterMargin   := Round(BaseOuterMargin   * Scale);
-}
   ButtonHeight := Round(36 * Scale);     // vorher z.B. 30–34 → jetzt etwas kleiner
   ButtonSpacing := Round(4 * Scale);     // Abstand zwischen Buttons
   OuterMargin := Round(7 * Scale);       // Abstand zu den Rändern
@@ -749,6 +744,7 @@ begin
   BorderIcons := BorderIcons - [biMaximize];
   CoInitialize(nil);
 
+  Application.HintPause := 750;
   DragDelay := 300;
 
   IniPath := ChangeFileExt(Application.ExeName, '.ini');
