@@ -735,8 +735,6 @@ begin
   BorderIcons := BorderIcons - [biMaximize];
   CoInitialize(nil);
 
-  Application.HintPause := 700;
-  Application.HintHidePause := 5000;
   DragDelay := 300;
 
   IniPath := ChangeFileExt(Application.ExeName, '.ini');
