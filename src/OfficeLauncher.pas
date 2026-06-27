@@ -53,7 +53,6 @@ type
     procedure MenuHelpClick(Sender: TObject);
     procedure MinimizeJNClick(Sender: TObject);
     procedure RestoreClick(Sender: TObject);
-    procedure HotkeyJNClick(Sender: TObject);
     procedure AutostartJNClick(Sender: TObject);
     procedure DialogEscHandler(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure StartBoxinibearbeiten1Click(Sender: TObject);
@@ -510,10 +509,9 @@ begin
     Btn.ImageIndex := IconIndex;   // individuelles Programm-Icon
   end;
 
-  Btn.Caption := Cap;
-  Btn.Hint := ExeName;
-  Btn.ShowHint := True;
-
+  Btn.Caption   := Cap;
+  Btn.Hint      := ExeName;
+  Btn.ShowHint  := True;
   Btn.Font.Name := 'Segoe UI';
 
   // Schrift: WQHD größer, 4K wie gehabt
@@ -612,12 +610,6 @@ begin
   AutostartJN.Checked := Ini.ReadBool('Autostart', 'Enabled', AutostartJN.Checked);
   // Hotkey Ja/Nein
   HotkeyJN.Checked := Ini.ReadBool('Hotkey', 'Enabled', HotkeyJN.Checked);
-  if HotkeyJN.Checked then
-    Hint := '- StartBox Hotkey Alt+S' + #13 +
-            '- RMB im System Tray für Menü'
-  else
-    Hint := '- StartBox' + #13 +
-            '- RMB im System Tray für Menü';
 end;
 
 procedure TForm1.SaveFormPosition;
@@ -733,44 +725,43 @@ var
   Scale: Single;
   IconSize: Integer;
   UrlIcon: TIcon;
+  Btn: TBitBtn;
 begin
   Scale := Self.CurrentPPI / 96;
 
   // DPI-skalierte Basiswerte
-  ButtonHeight := Round(36 * Scale);     // vorher z.B. 30–34 → jetzt etwas kleiner
-  ButtonSpacing := Round(4 * Scale);     // Abstand zwischen Buttons
-  OuterMargin := Round(7 * Scale);       // Abstand zu den Rändern
+  ButtonHeight := Round(36 * Scale);
+  ButtonSpacing := Round(4 * Scale);
+  OuterMargin := Round(7 * Scale);
 
   BorderIcons := BorderIcons - [biMaximize];
   CoInitialize(nil);
 
-  Application.HintPause := 750;
+  Application.ShowHint := True;
   DragDelay := 300;
 
   IniPath := ChangeFileExt(Application.ExeName, '.ini');
-  Ini := TIniFile.Create(IniPath);
+  Ini     := TIniFile.Create(IniPath);
   Buttons := TList<TBitBtn>.Create;
 
   ForceClose := False;
 
-  // *** Icongröße abhängig von DPI ***
+  // Icongröße abhängig von DPI
   if Scale <= 1.30 then
-    IconSize := 16        // WQHD → kleiner
+    IconSize := 16
   else
-    IconSize := 32;       // 4K → unverändert
+    IconSize := 32;
 
-  // *** URL-Icon aus der ImageList sichern ***
+  // URL-Icon sichern
   UrlIcon := TIcon.Create;
   try
-    // WICHTIG: Icon aus Index 0 auslesen
     ImageList1.GetIcon(0, UrlIcon);
   except
     UrlIcon := nil;
   end;
 
-  // *** ImageList neu initialisieren ***
-  ImageList1.Clear;  // jetzt ist sie leer
-
+  // ImageList neu initialisieren
+  ImageList1.Clear;
   ImageList1.ColorDepth := cd32bit;
   ImageList1.Masked := False;
   ImageList1.DrawingStyle := dsTransparent;
@@ -778,9 +769,8 @@ begin
   ImageList1.Width  := IconSize;
   ImageList1.Height := IconSize;
 
-  // *** URL-Icon wieder als Index 0 einfügen ***
   if Assigned(UrlIcon) then
-    ImageList1.AddIcon(UrlIcon);   // garantiert Index 0
+    ImageList1.AddIcon(UrlIcon);
 
   UrlIcon.Free;
 
@@ -809,8 +799,6 @@ begin
 
   DragAcceptFiles(Handle, True);
 
-  ShowHint := True;
-
   LoadFormPosition;
 
   if HotkeyJN.Checked then
@@ -820,7 +808,7 @@ begin
 
   OfficeEdition := DetectOfficeEdition;
 
-  // *** Jetzt erst Buttons laden ***
+  // *** Buttons laden ***
   LoadButtonsFromIni;
   LoadOfficeButtons;
 
@@ -840,23 +828,6 @@ begin
   Ini.Free;
   Buttons.Free;
   CoUninitialize;
-end;
-
-procedure TForm1.HotkeyJNClick(Sender: TObject);
-begin
-  HotkeyJN.Checked := not HotkeyJN.Checked;
-
-  if HotkeyJN.Checked then
-  begin
-    RegisterHotKey(Handle, HOTKEY_ID, MOD_ALT, Ord('S'));
-    Hint := '- StartBox Hotkey Alt+S' + #13 +
-            '- RMB im System Tray für Menü'
-  end else
-  begin
-    UnregisterHotKey(Handle, HOTKEY_ID);
-    Hint := '- StartBox' + #13 +
-            '- RMB im System Tray für Menü'
-  end;
 end;
 
 procedure OpenWithDialog(const FileName: string);

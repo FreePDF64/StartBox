@@ -191,7 +191,6 @@ object Form1: TForm1
     object HotkeyJN: TMenuItem
       Caption = 'Hotkey Alt+S: Maximieren (Toggle)'
       Checked = True
-      OnClick = HotkeyJNClick
     end
     object MinimizeJN: TMenuItem
       Caption = 'Nach Buttonklick minimieren'
