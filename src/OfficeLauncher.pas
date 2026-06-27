@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   26.06.2026
+// Ende:   27.06.2026
 //
 
 unit OfficeLauncher;
@@ -107,7 +107,6 @@ type
     function  CalculateOptimalButtonWidth: Integer;
     function  WouldExceedScreenHeight: Boolean;
 
-    function  ButtonsOverlap(A, B: TBitBtn): Boolean;
     procedure SwapButtons(A, B: TBitBtn);
 
     procedure ButtonContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
@@ -888,9 +887,14 @@ begin
     MinimizeToTray;
 end;
 
-function TForm1.ButtonsOverlap(A, B: TBitBtn): Boolean;
+function HalfOverlap(DragBtn, OtherBtn: TBitBtn): Boolean;
+var
+  MidY: Integer;
 begin
-  Result := (A.Top < B.Top + B.Height) and (A.Top + A.Height > B.Top);
+  MidY := DragBtn.Top + (DragBtn.Height div 2);
+  Result :=
+    (MidY >= OtherBtn.Top) and
+    (MidY <= OtherBtn.Top + OtherBtn.Height);
 end;
 
 procedure TForm1.ButtonMouseDown(Sender: TObject; Button: TMouseButton;
@@ -945,42 +949,55 @@ end;
 
 procedure TForm1.ButtonMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
-  Btn: TBitBtn; I, dx, dy: Integer;
+  Btn: TBitBtn;
+  I, dx, dy: Integer;
+  DragDir: Integer;
 begin
-  // Mausbewegung prüfen
   if ssLeft in Shift then
   begin
     dx := Abs(X - DragStartPos.X);
     dy := Abs(Y - DragStartPos.Y);
 
-    // Bewegung zu klein → kein Drag
     if (dx < DragThreshold) and (dy < DragThreshold) then
       Exit;
 
-    // Zeit noch nicht erreicht → kein Drag
     if (GetTickCount - DragStartTime) < DragDelay then
       Exit;
 
-    // Jetzt erst Drag starten
     IsDragging := True;
     if not Assigned(DragButton) then
       Exit;
 
-    DragTotalMove := DragTotalMove + Abs(Y - DragOffsetY);
-    DragButton.Top := DragButton.Top + (Y - DragOffsetY);
+    // Drag-Richtung bestimmen
+    DragDir := Y - DragOffsetY;   // >0 = nach unten, <0 = nach oben
+
+    DragTotalMove := DragTotalMove + Abs(DragDir);
+    DragButton.Top := DragButton.Top + DragDir;
+
     for I := 0 to Buttons.Count - 1 do
     begin
       Btn := Buttons[I];
-      if (Btn <> DragButton) and ButtonsOverlap(DragButton, Btn) then
+
+      if (Btn <> DragButton) then
       begin
-        if Btn <> LastSwapButton then
+        // Nur wenn zur Hälfte überlappt
+        if HalfOverlap(DragButton, Btn) then
         begin
-          SwapButtons(DragButton, Btn);
-          LastSwapButton := Btn;
+          // Nur wenn Richtung stimmt
+          if ((DragDir > 0) and (Btn.Top > DragButton.Top)) or
+             ((DragDir < 0) and (Btn.Top < DragButton.Top)) then
+          begin
+            if Btn <> LastSwapButton then
+            begin
+              SwapButtons(DragButton, Btn);
+              LastSwapButton := Btn;
+            end;
+            Exit;
+          end;
         end;
-        Exit;
       end;
     end;
+
     LastSwapButton := nil;
   end;
 end;
