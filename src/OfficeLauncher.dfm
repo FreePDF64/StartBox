@@ -185,15 +185,22 @@ object Form1: TForm1
       Caption = 'Info '#252'ber StartBox'
       OnClick = MenuHelpClick
     end
-    object MinimizeJN: TMenuItem
-      Caption = 'Nach Buttonklick minimieren'
-      Checked = True
-      OnClick = MinimizeJNClick
+    object N3: TMenuItem
+      Caption = '-'
     end
     object HotkeyJN: TMenuItem
       Caption = 'Hotkey Alt+S: Maximieren (Toggle)'
       Checked = True
       OnClick = HotkeyJNClick
+    end
+    object MinimizeJN: TMenuItem
+      Caption = 'Nach Buttonklick minimieren'
+      Checked = True
+      OnClick = MinimizeJNClick
+    end
+    object StartBoxinibearbeiten1: TMenuItem
+      Caption = 'StartBox.ini bearbeiten'
+      OnClick = StartBoxinibearbeiten1Click
     end
     object AutostartJN: TMenuItem
       Caption = 'Zum Windows-Autostart hinzuf'#252'gen'

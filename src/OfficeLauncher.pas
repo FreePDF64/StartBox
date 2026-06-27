@@ -35,6 +35,8 @@ type
     HotkeyJN: TMenuItem;
     N2: TMenuItem;
     AutostartJN: TMenuItem;
+    N3: TMenuItem;
+    StartBoxinibearbeiten1: TMenuItem;
 
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -54,6 +56,7 @@ type
     procedure HotkeyJNClick(Sender: TObject);
     procedure AutostartJNClick(Sender: TObject);
     procedure DialogEscHandler(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure StartBoxinibearbeiten1Click(Sender: TObject);
 
   private
     Ini: TIniFile;
@@ -626,6 +629,17 @@ begin
   Ini.WriteBool('Autostart', 'Enabled', AutostartJN.Checked);
   // Hotkey Ja/Nein
   Ini.WriteBool('Hotkey', 'Enabled', HotkeyJN.Checked);
+end;
+
+procedure TForm1.StartBoxinibearbeiten1Click(Sender: TObject);
+var
+  StartBoxIni: String;
+begin
+  StartBoxIni := IncludeTrailingBackslash(ExtractFilePath(Application.ExeName)) + 'StartBox.ini';
+  // Wenn die StartBox.ini vorhanden ist, dann...
+  if FileExists(StartBoxIni) then
+    // Editor aufrufen...
+  ShellExecute(Application.Handle, 'open', PChar('notepad.exe'), PChar(' "' + StartBoxIni + '"'), NIL, SW_SHOWNORMAL)
 end;
 
 function TForm1.CalculateOptimalButtonWidth: Integer;
