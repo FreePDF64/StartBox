@@ -108,6 +108,7 @@ type
     function  WouldExceedScreenHeight: Boolean;
 
     procedure SwapButtons(A, B: TBitBtn);
+    function GetDynamicNeighbor(DragBtn: TBitBtn; DragDir: Integer): TBitBtn;
 
     procedure ButtonContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
     procedure MenuDeleteButtonClick(Sender: TObject);
@@ -897,6 +898,49 @@ begin
     (MidY <= OtherBtn.Top + OtherBtn.Height);
 end;
 
+function TForm1.GetDynamicNeighbor(DragBtn: TBitBtn; DragDir: Integer): TBitBtn;
+var
+  I: Integer;
+  Btn: TBitBtn;
+  BestDist: Integer;
+begin
+  Result := nil;
+  BestDist := MaxInt;
+
+  for I := 0 to Buttons.Count - 1 do
+  begin
+    Btn := Buttons[I];
+    if Btn = DragBtn then
+      Continue;
+
+    if DragDir > 0 then
+    begin
+      // Nach unten → wir suchen den Button direkt darunter
+      if Btn.Top > DragBtn.Top then
+      begin
+        if (Btn.Top - DragBtn.Top) < BestDist then
+        begin
+          BestDist := Btn.Top - DragBtn.Top;
+          Result := Btn;
+        end;
+      end;
+    end
+    else if DragDir < 0 then
+    begin
+      // Nach oben → wir suchen den Button direkt darüber
+      if Btn.Top < DragBtn.Top then
+      begin
+        if (DragBtn.Top - Btn.Top) < BestDist then
+        begin
+          BestDist := DragBtn.Top - Btn.Top;
+          Result := Btn;
+        end;
+      end;
+    end;
+  end;
+end;
+
+
 procedure TForm1.ButtonMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
@@ -949,8 +993,8 @@ end;
 
 procedure TForm1.ButtonMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
-  Btn: TBitBtn;
-  I, dx, dy: Integer;
+  Neighbor: TBitBtn;
+  dx, dy: Integer;
   DragDir: Integer;
 begin
   if ssLeft in Shift then
@@ -969,32 +1013,24 @@ begin
       Exit;
 
     // Drag-Richtung bestimmen
-    DragDir := Y - DragOffsetY;   // >0 = nach unten, <0 = nach oben
+    DragDir := Y - DragOffsetY;
 
     DragTotalMove := DragTotalMove + Abs(DragDir);
     DragButton.Top := DragButton.Top + DragDir;
 
-    for I := 0 to Buttons.Count - 1 do
-    begin
-      Btn := Buttons[I];
+    // Dynamischen Nachbar bestimmen
+    Neighbor := GetDynamicNeighbor(DragButton, DragDir);
 
-      if (Btn <> DragButton) then
+    if Assigned(Neighbor) then
+    begin
+      if HalfOverlap(DragButton, Neighbor) then
       begin
-        // Nur wenn zur Hälfte überlappt
-        if HalfOverlap(DragButton, Btn) then
+        if Neighbor <> LastSwapButton then
         begin
-          // Nur wenn Richtung stimmt
-          if ((DragDir > 0) and (Btn.Top > DragButton.Top)) or
-             ((DragDir < 0) and (Btn.Top < DragButton.Top)) then
-          begin
-            if Btn <> LastSwapButton then
-            begin
-              SwapButtons(DragButton, Btn);
-              LastSwapButton := Btn;
-            end;
-            Exit;
-          end;
+          SwapButtons(DragButton, Neighbor);
+          LastSwapButton := Neighbor;
         end;
+        Exit;
       end;
     end;
 
