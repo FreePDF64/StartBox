@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   27.06.2026
+// Ende:   28.06.2026
 //
 
 unit OfficeLauncher;
