@@ -86,7 +86,6 @@ type
 
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
-    procedure WMNCLButtonDblClk(var Msg: TWMNCLButtonDblClk); message WM_NCLBUTTONDBLCLK;
     procedure WMHotKey(var Msg: TWMHotKey); message WM_HOTKEY;
     procedure WMExitSizeMove(var Msg: TMessage); message WM_EXITSIZEMOVE;
     procedure CalculateAutoFormSize(out NewW, NewH: Integer);
@@ -108,7 +107,6 @@ type
     procedure RecalculateButtonWidths;
     procedure RecalculateButtonPositions;
     function  CalculateOptimalButtonWidth: Integer;
-    function  WouldExceedScreenHeight: Boolean;
     function  GetColumnOfButton(Btn: TBitBtn): Integer;
 
     procedure SwapButtons(A, B: TBitBtn);
@@ -288,14 +286,6 @@ begin
     Exit;
   end;
   inherited;
-end;
-
-function TForm1.WouldExceedScreenHeight: Boolean;
-begin
-  if Buttons.Count = 0 then
-    Exit(False);
-
-  Result := (Top + Height + ButtonHeight + ButtonSpacing) > Screen.WorkAreaHeight;
 end;
 
 // Programm in den Autostart...
@@ -791,11 +781,6 @@ begin
   for Btn in Buttons do
     if SameText(Btn.Hint, Exe) then
       Exit(True);
-end;
-
-procedure TForm1.WMNCLButtonDblClk(var Msg: TWMNCLButtonDblClk);
-begin
-  // NICHT maximieren
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
