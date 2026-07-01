@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   28.06.2026
+// Ende:   01.07.2026
 //
 
 unit OfficeLauncher;
@@ -56,6 +56,7 @@ type
     procedure AutostartJNClick(Sender: TObject);
     procedure DialogEscHandler(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure StartBoxinibearbeiten1Click(Sender: TObject);
+    procedure FormResize(Sender: TObject);
 
   private
     Ini: TIniFile;
@@ -66,15 +67,14 @@ type
     ButtonHeight: Integer;
     ButtonSpacing: Integer;
 
+    IsResizing: Boolean;
     IsDragging: Boolean;
     DragButton: TBitBtn;
     DragOffsetY: Integer;
     DragOffsetX: Integer;
     DragTotalMove: Integer;
-
     DragStartTime: Cardinal;
     DragDelay: Cardinal;
-    LastSwapButton: TBitBtn;
 
     OfficeEdition: string;
 
@@ -88,6 +88,8 @@ type
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DROPFILES;
     procedure WMNCLButtonDblClk(var Msg: TWMNCLButtonDblClk); message WM_NCLBUTTONDBLCLK;
     procedure WMHotKey(var Msg: TWMHotKey); message WM_HOTKEY;
+    procedure WMExitSizeMove(var Msg: TMessage); message WM_EXITSIZEMOVE;
+    procedure CalculateAutoFormSize(out NewW, NewH: Integer);
     procedure ToggleMainForm;
 
     procedure MinimizeToTray;
@@ -95,11 +97,10 @@ type
     function DetectOfficeEdition: string;
     function FindOfficePath: string;
 
-    procedure AddButton(const Caption, ExeName: string);
+    function  AddButton(const Caption, ExeName: string): TBitBtn;
     procedure LoadOfficeButtons;
     procedure LoadButtonsFromIni;
     procedure SaveButtonsToIni;
-
     procedure LoadFormPosition;
     procedure SaveFormPosition;
     function  ButtonExistsForExe(const Exe: string): Boolean;
@@ -108,10 +109,9 @@ type
     procedure RecalculateButtonPositions;
     function  CalculateOptimalButtonWidth: Integer;
     function  WouldExceedScreenHeight: Boolean;
+    function  GetColumnOfButton(Btn: TBitBtn): Integer;
 
     procedure SwapButtons(A, B: TBitBtn);
-    function GetDynamicNeighbor(DragBtn: TBitBtn; DragDir: Integer): TBitBtn;
-
     procedure ButtonContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
     procedure MenuDeleteButtonClick(Sender: TObject);
     procedure MenuRenameButtonClick(Sender: TObject);
@@ -136,10 +136,6 @@ var
   ButtonHeight : Integer;
   ButtonSpacing: Integer;
   OuterMargin  : Integer;
-
-  BaseButtonHeight  : Integer = 40;
-  BaseButtonSpacing : Integer = 6;
-  BaseOuterMargin   : Integer = 10;
 
 implementation
 
@@ -169,6 +165,40 @@ const
 function IsMyWindowForeground(FormHandle: HWND): Boolean;
 begin
   Result := GetForegroundWindow = FormHandle;
+end;
+
+procedure TForm1.WMExitSizeMove(var Msg: TMessage);
+var
+  NewW, NewH: Integer;
+begin
+  inherited;
+
+  if IsResizing then
+  begin
+    RecalculateButtonPositions;
+    CalculateAutoFormSize(NewW, NewH);
+    ClientWidth  := NewW;
+    ClientHeight := NewH;
+    IsResizing := False;
+  end;
+end;
+
+procedure TForm1.CalculateAutoFormSize(out NewW, NewH: Integer);
+var
+  I: Integer;
+  MaxRight, MaxBottom: Integer;
+begin
+  MaxRight := 0;
+  MaxBottom := 0;
+
+  for I := 0 to Buttons.Count - 1 do
+  begin
+    MaxRight := Max(MaxRight, Buttons[I].Left + Buttons[I].Width);
+    MaxBottom := Max(MaxBottom, Buttons[I].Top + Buttons[I].Height);
+  end;
+
+  NewW := MaxRight + OuterMargin;
+  NewH := MaxBottom + OuterMargin;
 end;
 
 procedure TForm1.ToggleMainForm;
@@ -224,6 +254,27 @@ begin
   end;
 end;
 
+function TForm1.GetColumnOfButton(Btn: TBitBtn): Integer;
+var
+  I: Integer;
+  ColLeft: Integer;
+  MaxWidth: Integer;
+begin
+  MaxWidth := 0;
+  for I := 0 to Buttons.Count - 1 do
+    if Buttons[I].Width > MaxWidth then
+      MaxWidth := Buttons[I].Width;
+
+  ColLeft := OuterMargin;
+  Result := 0;
+
+  while Btn.Left > ColLeft + MaxWidth do
+  begin
+    Inc(Result);
+    ColLeft := ColLeft + MaxWidth + ButtonSpacing;
+  end;
+end;
+
 procedure TForm1.WMSysCommand(var Msg: TWMSysCommand);
 begin
   // Maximieren verhindern
@@ -240,14 +291,11 @@ begin
 end;
 
 function TForm1.WouldExceedScreenHeight: Boolean;
-var
-  NeededHeight: Integer;
 begin
-  NeededHeight :=
-    OuterMargin +
-    (Buttons.Count + 1) * (ButtonHeight + ButtonSpacing);
+  if Buttons.Count = 0 then
+    Exit(False);
 
-  Result := NeededHeight > Screen.WorkAreaHeight;
+  Result := (Top + Height + ButtonHeight + ButtonSpacing) > Screen.WorkAreaHeight;
 end;
 
 // Programm in den Autostart...
@@ -399,7 +447,7 @@ end;
 procedure TForm1.MenuHelpClick(Sender: TObject);
 begin
   MessageDlgBottomRight
-    ('StartBox Version 1.3' + #13 + #13 +
+    ('StartBox Version 1.4' + #13 + #13 +
      'Copyright © 2026 by FreePDF64@outlook.com' + #13 +
      'Website -> https://github.com/FreePDF64/StartBox' + #13 + #13 +
      'StartBox darf sowohl im privaten als auch im kommerziellen' + #13 +
@@ -468,23 +516,15 @@ begin
   DestroyIcon(SFI.hIcon);
 end;
 
-procedure TForm1.AddButton(const Caption, ExeName: string);
+function TForm1.AddButton(const Caption, ExeName: string): TBitBtn;
 var
   Btn: TBitBtn;
   IconIndex: Integer;
   Cap: string;
   Scale: Single;
+  W: Integer;
 begin
   Scale := CurrentPPI / 96;
-
-  if WouldExceedScreenHeight then
-  begin
-    MessageDlg(
-      'Es können keine weiteren Elemente hinzugefügt werden, da die StartBox sonst den unteren Bildschirmrand überschreiten würde.',
-      mtWarning, [mbOK], 0
-    );
-    Exit;
-  end;
 
   Btn := TBitBtn.Create(Self);
   Btn.Parent := Self;
@@ -499,14 +539,14 @@ begin
 
     Btn.Glyph := nil;
     Btn.Images := ImageList1;
-    Btn.ImageIndex := 0;           // dein URL-Icon
+    Btn.ImageIndex := 0;
   end
   else
   begin
     Cap := Caption;
     IconIndex := ExtractShellIconToImageList(ExeName, ImageList1, CurrentPPI);
     Btn.Images := ImageList1;
-    Btn.ImageIndex := IconIndex;   // individuelles Programm-Icon
+    Btn.ImageIndex := IconIndex;
   end;
 
   Btn.Caption   := Cap;
@@ -514,18 +554,19 @@ begin
   Btn.ShowHint  := True;
   Btn.Font.Name := 'Segoe UI';
 
-  // Schrift: WQHD größer, 4K wie gehabt
   if Scale <= 1.30 then
-    Btn.Font.Size := Max(Round(8.5 * Power(Scale, 0.22)), 8)   // WQHD
+    Btn.Font.Size := Max(Round(8.5 * Power(Scale, 0.22)), 8)
   else
-    Btn.Font.Size := Max(Round(7 * Power(Scale, 0.22)), 7);    // 4K
+    Btn.Font.Size := Max(Round(7 * Power(Scale, 0.22)), 7);
 
   Btn.Height := ButtonHeight;
-  Btn.Width  := 200;
+
+  // *** Breite wie alle bestehenden Buttons ***
+  W := CalculateOptimalButtonWidth;
+  Btn.Width := W;
 
   Btn.Spacing := ButtonSpacing;
   Btn.Margin  := ButtonSpacing;
-
   Btn.Layout := blGlyphLeft;
 
   Btn.PopupMenu := PopupButton;
@@ -535,10 +576,13 @@ begin
   Btn.OnMouseUp := ButtonMouseUp;
   Btn.OnClick := ButtonClick;
 
+  // jetzt erst in die Liste
   Buttons.Add(Btn);
 
-  RecalculateButtonWidths;
+  // Positionierung übernimmt deine Spaltenlogik
   RecalculateButtonPositions;
+
+  Result := Btn;
 end;
 
 procedure TForm1.LoadOfficeButtons;
@@ -577,6 +621,8 @@ procedure TForm1.LoadButtonsFromIni;
 var
   I, Count: Integer;
   Exe, Cap: string;
+  L, T: Integer;
+  Btn: TBitBtn;
 begin
   Count := Ini.ReadInteger('Buttons', 'Count', 0);
 
@@ -584,7 +630,13 @@ begin
   begin
     Exe := Ini.ReadString('Buttons', 'Btn' + I.ToString + '_Exe', '');
     Cap := Ini.ReadString('Buttons', 'Btn' + I.ToString + '_Caption', '');
-    AddButton(Cap, Exe);
+
+    L := Ini.ReadInteger('Buttons', 'Btn' + I.ToString + '_Left', OuterMargin);
+    T := Ini.ReadInteger('Buttons', 'Btn' + I.ToString + '_Top', OuterMargin);
+
+    Btn := AddButton(Cap, Exe);
+    Btn.Left := L;
+    Btn.Top  := T;
   end;
 end;
 
@@ -594,10 +646,14 @@ var
 begin
   Ini.EraseSection('Buttons');
   Ini.WriteInteger('Buttons', 'Count', Buttons.Count);
+
   for I := 0 to Buttons.Count - 1 do
   begin
     Ini.WriteString('Buttons', 'Btn' + I.ToString + '_Exe', Buttons[I].Hint);
     Ini.WriteString('Buttons', 'Btn' + I.ToString + '_Caption', Buttons[I].Caption);
+
+    Ini.WriteInteger('Buttons', 'Btn' + I.ToString + '_Left', Buttons[I].Left);
+    Ini.WriteInteger('Buttons', 'Btn' + I.ToString + '_Top',  Buttons[I].Top);
   end;
 end;
 
@@ -605,10 +661,12 @@ procedure TForm1.LoadFormPosition;
 begin
   Left := Ini.ReadInteger('Form', 'Left', Left);
   Top := Ini.ReadInteger('Form', 'Top', Top);
+
+  ClientWidth  := Ini.ReadInteger('Form', 'Width', ClientWidth);
+  ClientHeight := Ini.ReadInteger('Form', 'Height', ClientHeight);
+
   MinimizeJN.Checked := Ini.ReadBool('Form', 'Minimize', MinimizeJN.Checked);
-  // Autostart?
   AutostartJN.Checked := Ini.ReadBool('Autostart', 'Enabled', AutostartJN.Checked);
-  // Hotkey Ja/Nein
   HotkeyJN.Checked := Ini.ReadBool('Hotkey', 'Enabled', HotkeyJN.Checked);
 end;
 
@@ -616,10 +674,12 @@ procedure TForm1.SaveFormPosition;
 begin
   Ini.WriteInteger('Form', 'Left', Left);
   Ini.WriteInteger('Form', 'Top', Top);
+
+  Ini.WriteInteger('Form', 'Width', ClientWidth);
+  Ini.WriteInteger('Form', 'Height', ClientHeight);
+
   Ini.WriteBool('Form', 'Minimize', MinimizeJN.Checked);
-  // Autostart?
   Ini.WriteBool('Autostart', 'Enabled', AutostartJN.Checked);
-  // Hotkey Ja/Nein
   Ini.WriteBool('Hotkey', 'Enabled', HotkeyJN.Checked);
 end;
 
@@ -638,14 +698,19 @@ function TForm1.CalculateOptimalButtonWidth: Integer;
 var
   I, W: Integer;
 begin
-  Result := 140; // Mindestbreite etwas größer
+  Result := 140; // Mindestbreite
+
+  if Buttons.Count = 0 then
+  begin
+    Canvas.Font.Assign(Self.Font);
+    Exit(Result);
+  end;
 
   Canvas.Font.Assign(Buttons[0].Font);
 
   for I := 0 to Buttons.Count - 1 do
   begin
-    // 40px für Icon + Padding, 20px extra für mehr Luft
-    W := Canvas.TextWidth(Buttons[I].Caption) + 90;
+    W := Canvas.TextWidth(Buttons[I].Caption) + 90; // 40 Icon + 50 Luft
     if W > Result then
       Result := W;
   end;
@@ -654,37 +719,61 @@ end;
 procedure TForm1.RecalculateButtonWidths;
 var
   I: Integer;
-  NewWidth: Integer;
+  W, TextW: Integer;
 begin
-  if Buttons.Count = 0 then Exit;
+  // Wenn keine Buttons existieren → Default
+  if Buttons.Count = 0 then
+    Exit;
 
-  // optimale Breite berechnen
-  NewWidth := CalculateOptimalButtonWidth;
+  // Font für Textmessung
+  Canvas.Font.Assign(Buttons[0].Font);
 
-  // etwas kleiner machen (z. B. 20px)
-  NewWidth := NewWidth - 20;
-  if NewWidth < 50 then
-    NewWidth := 50; // Sicherheitsgrenze
+  // Mindestbreite
+  W := 120;
 
-  // auf alle Buttons anwenden
+  // *** WICHTIG ***
+  // Nur bestehende Buttons messen → NICHT den neuen Button
   for I := 0 to Buttons.Count - 1 do
-    Buttons[I].Width := NewWidth;
+  begin
+    TextW := Canvas.TextWidth(Buttons[I].Caption);
+
+    // kompakter Padding: Icon + 12px Luft
+    TextW := TextW + 40 + 12;
+
+    if TextW > W then
+      W := TextW;
+  end;
+
+  // Alle Buttons auf die gleiche Breite setzen
+  for I := 0 to Buttons.Count - 1 do
+    Buttons[I].Width := W;
 end;
 
 procedure TForm1.RecalculateButtonPositions;
 var
   I: Integer;
+  ColLeft: Integer;
   Y: Integer;
   MaxWidth: Integer;
 begin
   if Buttons.Count = 0 then Exit;
 
-  Y := OuterMargin;
   MaxWidth := Buttons[0].Width;
+
+  ColLeft := OuterMargin;
+  Y := OuterMargin;
 
   for I := 0 to Buttons.Count - 1 do
   begin
-    Buttons[I].Left := OuterMargin;
+    // Neue Spalte, wenn unten kein Platz mehr ist
+//    if Y + ButtonHeight > ClientHeight - OuterMargin then
+    if Y + ButtonHeight > ClientHeight - 7 then
+    begin
+      ColLeft := ColLeft + MaxWidth + ButtonSpacing;
+      Y := OuterMargin;
+    end;
+
+    Buttons[I].Left := ColLeft;
     Buttons[I].Top  := Y;
 
     Y := Y + ButtonHeight + ButtonSpacing;
@@ -692,15 +781,6 @@ begin
     if Buttons[I].Width > MaxWidth then
       MaxWidth := Buttons[I].Width;
   end;
-
-  // letztes ButtonSpacing entfernen
-  Y := Y - ButtonSpacing;
-
-  // unten exakt so viel Rand wie links/rechts
-  ClientHeight := Y + OuterMargin;
-
-  // Breite bleibt symmetrisch
-  ClientWidth := MaxWidth + OuterMargin * 2;
 end;
 
 function TForm1.ButtonExistsForExe(const Exe: string): Boolean;
@@ -723,16 +803,14 @@ var
   IniPath: string;
   Sep: TMenuItem;
   Scale: Single;
-  IconSize: Integer;
+  IconSize, NewW, NewH: Integer;
   UrlIcon: TIcon;
-  Btn: TBitBtn;
 begin
   Scale := Self.CurrentPPI / 96;
 
-  // DPI-skalierte Basiswerte
-  ButtonHeight := Round(36 * Scale);
+  ButtonHeight  := Round(36 * Scale);
   ButtonSpacing := Round(4 * Scale);
-  OuterMargin := Round(7 * Scale);
+  OuterMargin   := Round(7 * Scale);
 
   BorderIcons := BorderIcons - [biMaximize];
   CoInitialize(nil);
@@ -746,13 +824,11 @@ begin
 
   ForceClose := False;
 
-  // Icongröße abhängig von DPI
   if Scale <= 1.30 then
     IconSize := 16
   else
     IconSize := 32;
 
-  // URL-Icon sichern
   UrlIcon := TIcon.Create;
   try
     ImageList1.GetIcon(0, UrlIcon);
@@ -760,7 +836,6 @@ begin
     UrlIcon := nil;
   end;
 
-  // ImageList neu initialisieren
   ImageList1.Clear;
   ImageList1.ColorDepth := cd32bit;
   ImageList1.Masked := False;
@@ -774,7 +849,6 @@ begin
 
   UrlIcon.Free;
 
-  // Popup-Menü
   PopupButton := TPopupMenu.Create(Self);
 
   MenuRenameButton := TMenuItem.Create(Self);
@@ -808,15 +882,29 @@ begin
 
   OfficeEdition := DetectOfficeEdition;
 
-  // *** Buttons laden ***
+  // ---------------------------------------------------------
+  // Buttons laden
+  // ---------------------------------------------------------
   LoadButtonsFromIni;
   LoadOfficeButtons;
 
   if Buttons.Count = 0 then
     MessageDlg('Bitte Anwendungen/Dateien/etc. hinzufügen per Drag&Drop.', mtInformation, [mbOK], 0);
 
+  // ---------------------------------------------------------
+  // AUTOMATISCHE ANPASSUNG NACH DEM LADEN
+  // ---------------------------------------------------------
+
+  // 1) Breite aller Buttons neu berechnen
   RecalculateButtonWidths;
+
+  // 2) Buttons neu anordnen
   RecalculateButtonPositions;
+
+  // 3) Form automatisch anpassen
+  CalculateAutoFormSize(NewW, NewH);
+  ClientWidth  := NewW;
+  ClientHeight := NewH;
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
@@ -828,6 +916,15 @@ begin
   Ini.Free;
   Buttons.Free;
   CoUninitialize;
+end;
+
+procedure TForm1.FormResize(Sender: TObject);
+begin
+  if Buttons.Count <= 0 then
+    Exit;
+
+  IsResizing := True;
+  RecalculateButtonPositions;
 end;
 
 procedure OpenWithDialog(const FileName: string);
@@ -877,48 +974,31 @@ begin
     (MidY <= OtherBtn.Top + OtherBtn.Height);
 end;
 
-function TForm1.GetDynamicNeighbor(DragBtn: TBitBtn; DragDir: Integer): TBitBtn;
+procedure TForm1.SwapButtons(A, B: TBitBtn);
 var
-  I: Integer;
-  Btn: TBitBtn;
-  BestDist: Integer;
+  IA, IB: Integer;
+  DragMid, TargetMid: Integer;
 begin
-  Result := nil;
-  BestDist := MaxInt;
+  IA := Buttons.IndexOf(A);
+  IB := Buttons.IndexOf(B);
 
-  for I := 0 to Buttons.Count - 1 do
+  DragMid := A.Top + A.Height div 2;
+  TargetMid := B.Top + B.Height div 2;
+
+  if DragMid < TargetMid - (B.Height div 4) then
   begin
-    Btn := Buttons[I];
-    if Btn = DragBtn then
-      Continue;
+  end
+  else if DragMid > TargetMid + (B.Height div 4) then
+  begin
+  end
+  else
+    Exit;
 
-    if DragDir > 0 then
-    begin
-      // Nach unten → wir suchen den Button direkt darunter
-      if Btn.Top > DragBtn.Top then
-      begin
-        if (Btn.Top - DragBtn.Top) < BestDist then
-        begin
-          BestDist := Btn.Top - DragBtn.Top;
-          Result := Btn;
-        end;
-      end;
-    end
-    else if DragDir < 0 then
-    begin
-      // Nach oben → wir suchen den Button direkt darüber
-      if Btn.Top < DragBtn.Top then
-      begin
-        if (DragBtn.Top - Btn.Top) < BestDist then
-        begin
-          BestDist := DragBtn.Top - Btn.Top;
-          Result := Btn;
-        end;
-      end;
-    end;
-  end;
+  Buttons[IA] := B;
+  Buttons[IB] := A;
+
+  RecalculateButtonPositions;
 end;
-
 
 procedure TForm1.ButtonMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
@@ -929,91 +1009,62 @@ begin
 
   DragStartTime := GetTickCount;
   DragStartPos := Point(X, Y);
-  IsDragging := False;
 
   DragOffsetX := X;
   DragOffsetY := Y;
 
   DragTotalMove := 0;
-end;
 
-procedure TForm1.SwapButtons(A, B: TBitBtn);
-var
-  IA, IB: Integer;
-  DragMid, TargetMid: Integer;
-begin
-  IA := Buttons.IndexOf(A);
-  IB := Buttons.IndexOf(B);
-
-  // Vertikale Mitte der Buttons
-  DragMid := A.Top + A.Height div 2;
-  TargetMid := B.Top + B.Height div 2;
-
-  // Swap nur erlauben, wenn DragButton wirklich über/unter dem Ziel liegt
-  // → verhindert seitliches Swappen
-  if DragMid < TargetMid - (B.Height div 4) then
-  begin
-    // A kommt von oben → Swap nach unten
-  end
-  else if DragMid > TargetMid + (B.Height div 4) then
-  begin
-    // A kommt von unten → Swap nach oben
-  end
-  else
-    Exit; // kein gültiger vertikaler Swap
-
-  // Reihenfolge in der Liste tauschen
-  Buttons[IA] := B;
-  Buttons[IB] := A;
-
-  // Layout SOFORT neu setzen
-  RecalculateButtonPositions;
+  IsDragging := False; // wird in MouseMove aktiviert
 end;
 
 procedure TForm1.ButtonMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
-  Neighbor: TBitBtn;
-  dx, dy: Integer;
-  DragDir: Integer;
+  Btn: TBitBtn;
+  I: Integer;
+  Other: TBitBtn;
+  Col: Integer;
+  P: TPoint;
 begin
-  if ssLeft in Shift then
+  Btn := DragButton;
+  if Btn = nil then Exit;
+
+  // Drag aktivieren
+  if not IsDragging then
   begin
-    dx := Abs(X - DragStartPos.X);
-    dy := Abs(Y - DragStartPos.Y);
-
-    if (dx < DragThreshold) and (dy < DragThreshold) then
+    if (GetTickCount - DragStartTime >= DragDelay) and
+       (Abs(X - DragStartPos.X) + Abs(Y - DragStartPos.Y) > 3) then
+      IsDragging := True
+    else
       Exit;
+  end;
 
-    if (GetTickCount - DragStartTime) < DragDelay then
-      Exit;
+  // Maus absolut holen
+  GetCursorPos(P);
+  P := ScreenToClient(P);
 
-    IsDragging := True;
-    if not Assigned(DragButton) then
-      Exit;
+  // Button bewegen (zitternfrei)
+  Btn.Left := P.X - DragOffsetX;
+  Btn.Top  := P.Y - DragOffsetY;
 
-    // Drag-Richtung bestimmen
-    DragDir := Y - DragOffsetY;
+  // Spalte bestimmen
+  Col := GetColumnOfButton(Btn);
 
-    DragTotalMove := DragTotalMove + Abs(DragDir);
-    DragButton.Top := DragButton.Top + DragDir;
+  // Buttons in derselben Spalte prüfen
+  for I := 0 to Buttons.Count - 1 do
+  begin
+    Other := Buttons[I];
+    if Other = Btn then Continue;
 
-    // Dynamischen Nachbar bestimmen
-    Neighbor := GetDynamicNeighbor(DragButton, DragDir);
+    // Nur Buttons in derselben Spalte
+    if GetColumnOfButton(Other) <> Col then Continue;
 
-    if Assigned(Neighbor) then
+    // Überlappung → originaler schöner Swap
+    if Abs((Btn.Top + Btn.Height div 2) - (Other.Top + Other.Height div 2)) < (Btn.Height div 2) then
     begin
-      if HalfOverlap(DragButton, Neighbor) then
-      begin
-        if Neighbor <> LastSwapButton then
-        begin
-          SwapButtons(DragButton, Neighbor);
-          LastSwapButton := Neighbor;
-        end;
-        Exit;
-      end;
+      SwapButtons(Btn, Other);
+      Break; // nur einen Button tauschen
     end;
-
-    LastSwapButton := nil;
   end;
 end;
 
@@ -1021,15 +1072,12 @@ procedure TForm1.ButtonMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
   if (Button = mbLeft) and IsDragging then
-  begin
-    // Button wurde verschoben und Maustaste wurde losgelassen
     SaveButtonsToIni;
-  end;
 
   IsDragging := False;
   DragButton := nil;
 
-  RecalculateButtonPositions;  // ordnet wieder sauber ein
+  RecalculateButtonPositions;
 end;
 
 procedure TForm1.ButtonContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
@@ -1190,6 +1238,7 @@ var
   TextH: Integer;
   BottomPadding: Integer;
   LabelBottom: Integer;
+  NewW, NewH: Integer;   // <‑‑ hinzugefügt
 begin
   if ButtonToDelete = nil then Exit;
 
@@ -1259,12 +1308,12 @@ begin
 
     // Buttons direkt unter dem Label, rechtsbündig
     btnNo.Left := dlg.ClientWidth - BtnW - Spacing;
-    btnNo.Top  := LabelBottom + (Spacing);  // Abstand vergrößert
+    btnNo.Top  := LabelBottom + (Spacing);
 
     btnYes.Left := btnNo.Left - BtnW - Spacing;
     btnYes.Top  := btnNo.Top;
 
-    // Dialoghöhe exakt anpassen → unterer Rand kurz unter Buttons
+    // Dialoghöhe exakt anpassen
     dlg.ClientHeight := btnNo.Top + BtnH + BottomPadding;
 
     // Dialog unterhalb des Buttons anzeigen
@@ -1277,14 +1326,28 @@ begin
 
     if res <> mrYes then Exit;
 
-    // Button löschen
+    // ---------------------------------------------------------
+    // BUTTON LÖSCHEN + FORM NEU BERECHNEN
+    // ---------------------------------------------------------
+
     Buttons.Remove(ButtonToDelete);
     ButtonToDelete.Free;
     ButtonToDelete := nil;
 
+    // 1) Breite aller Buttons neu berechnen
     RecalculateButtonWidths;
+
+    // 2) Buttons neu anordnen
     RecalculateButtonPositions;
+
+    // 3) Form automatisch anpassen
+    CalculateAutoFormSize(NewW, NewH);
+    ClientWidth  := NewW;
+    ClientHeight := NewH;
+
+    // 4) Speichern
     SaveButtonsToIni;
+
   finally
     dlg.Free;
   end;
@@ -1442,6 +1505,7 @@ var
   Count: Integer;
   FileName: array[0..MAX_PATH] of Char;
   Dropped, URL, URL2: string;
+  NewW, NewH: Integer;
 begin
   Count := DragQueryFile(Msg.Drop, $FFFFFFFF, nil, 0);
 
@@ -1458,7 +1522,6 @@ begin
       begin
         URL2 := ExtractDomainFromURL(URL);
         AddButton(URL2, URL);   // Caption = URL2, Hint = URL
-        SaveButtonsToIni;
       end;
     end
 
@@ -1467,19 +1530,34 @@ begin
     begin
       Dropped := ResolveLnk(Dropped);
       AddButton(ChangeFileExt(ExtractFileName(Dropped), ''), Dropped);
-      SaveButtonsToIni;
     end
 
     // EXE oder alles andere...
     else
     begin
       AddButton(ChangeFileExt(ExtractFileName(Dropped), ''), Dropped);
-      SaveButtonsToIni;
     end;
+
+    // *** WICHTIG ***
+    // Nach jedem Hinzufügen:
+    // 1) Breite aller Buttons neu berechnen
+    RecalculateButtonWidths;
+
+    // 2) Buttons neu anordnen
+    RecalculateButtonPositions;
+
+    // 3) Form automatisch anpassen
+    CalculateAutoFormSize(NewW, NewH);
+    ClientWidth  := NewW;
+    ClientHeight := NewH;
+
+    // 4) Speichern
+    SaveButtonsToIni;
   end;
 
   DragFinish(Msg.Drop);
 end;
+
 
 end.
 

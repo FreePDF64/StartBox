@@ -5,7 +5,6 @@ object Form1: TForm1
   Margins.Top = 4
   Margins.Right = 4
   Margins.Bottom = 4
-  BorderStyle = bsSingle
   Caption = 'StartBox'
   ClientHeight = 500
   ClientWidth = 503
@@ -19,6 +18,7 @@ object Form1: TForm1
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnResize = FormResize
   PixelsPerInch = 120
   TextHeight = 19
   object ImageList1: TImageList
