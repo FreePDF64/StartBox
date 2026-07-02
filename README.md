@@ -2,8 +2,8 @@
 
 StartBox
 
--> Kleines Windows-Programm zum Starten von jeglichen Programmen, Dateien, Verknüpfungen, etc. von einer zentralen Oberfläche aus.
--> Änderung der Anzeige der Buttons erfolgt durch das Vergrößern/Verkleinern des StartBox-Fensters. 
+- Kleines Windows-Programm zum Starten von jeglichen Programmen, Dateien, Verknüpfungen, etc. von einer zentralen Oberfläche aus.
+- Änderung der Anzeige der Buttons erfolgt durch das Vergrößern/Verkleinern des StartBox-Fensters. 
 
 
 Copyright © 2026 by FreePDF64@outlook.com
