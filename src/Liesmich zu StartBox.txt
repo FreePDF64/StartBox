@@ -1,0 +1,2 @@
+Versionsinfo: 
+Durch FormResize veränderbar mit mehreren Spalten

@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   01.07.2026
+// Ende:   12.07.2026
 //
 
 unit OfficeLauncher;
@@ -82,6 +82,7 @@ type
     MenuDeleteButton: TMenuItem;
     MenuRenameButton: TMenuItem;
     MenuRunAsAdmin  : TMenuItem;
+    MenuEditPath    : TMenuItem;
     ButtonToDelete: TBitBtn;
 
     procedure WMSysCommand(var Msg: TWMSysCommand); message WM_SYSCOMMAND;
@@ -114,6 +115,7 @@ type
     procedure MenuDeleteButtonClick(Sender: TObject);
     procedure MenuRenameButtonClick(Sender: TObject);
     procedure MenuRunAsAdminClick(Sender: TObject);
+    procedure MenuEditPathClick(Sender: TObject);
 
     function  ResolveLnk(const LnkFile: string): string;
 
@@ -437,7 +439,7 @@ end;
 procedure TForm1.MenuHelpClick(Sender: TObject);
 begin
   MessageDlgBottomRight
-    ('StartBox Version 1.4' + #13 + #13 +
+    ('StartBox Version 1.5' + #13 + #13 +
      'Copyright © 2026 by FreePDF64@outlook.com' + #13 +
      'Website -> https://github.com/FreePDF64/StartBox' + #13 + #13 +
      'StartBox darf sowohl im privaten als auch im kommerziellen' + #13 +
@@ -447,7 +449,7 @@ begin
      'HowTo:' + #13 +
      '- Programme/Dateien/etc. werden per Drag&&Drop hinzugefügt' + #13 +
      '- Icons werden automatisch aus den Dateien extrahiert' + #13 +
-     '- Rechtsklick auf Button: Umbenennen, Löschen, als Admin ausführen' + #13 +
+     '- Rechtsklick auf Button: u.a. Umbenennen, Löschen, als Admin ausführen' + #13 +
      '- Schließen (X) minimiert in den System Tray' + #13 +
      '- Beenden NUR über das Tray-Menü' + #13 +
      '- Auswahl: Nach Klick auf Buttons minimieren in den System Tray' + #13 +
@@ -840,6 +842,11 @@ begin
   MenuRenameButton.Caption := 'Umbenennen';
   MenuRenameButton.OnClick := MenuRenameButtonClick;
   PopupButton.Items.Add(MenuRenameButton);
+
+  MenuEditPath := TMenuItem.Create(Self);
+  MenuEditPath.Caption := 'Pfad/URL anpassen';
+  MenuEditPath.OnClick := MenuEditPathClick;
+  PopupButton.Items.Add(MenuEditPath);
 
   MenuDeleteButton := TMenuItem.Create(Self);
   MenuDeleteButton.Caption := 'Löschen';
@@ -1333,6 +1340,114 @@ begin
     // 4) Speichern
     SaveButtonsToIni;
 
+  finally
+    dlg.Free;
+  end;
+end;
+
+procedure TForm1.MenuEditPathClick(Sender: TObject);
+var
+  dlg: TForm;
+  edt: TEdit;
+  lbl: TLabel;
+  btnOK, btnCancel: TButton;
+  p: TPoint;
+  res: Integer;
+  Scale: Single;
+  BtnW, BtnH, Spacing: Integer;
+  PaddingY: Integer;
+  TextH: Integer;
+  BottomPadding: Integer;
+begin
+  if ButtonToDelete = nil then Exit;
+
+  Scale := Self.CurrentPPI / 96;
+
+  BtnW := Max(Round(90 * Scale), 90);
+  Spacing := Round(10 * Scale);
+  PaddingY := Round(4 * Scale);
+  BottomPadding := Round(10 * Scale);
+
+  dlg := TForm.Create(Self);
+  try
+    dlg.KeyPreview := True;
+    dlg.OnKeyDown := DialogEscHandler;
+
+    dlg.BorderStyle := bsDialog;
+    dlg.Caption := 'Pfad/URL anpassen';
+    dlg.Position := poDesigned;
+
+    dlg.ClientWidth := Max(Round(280 * Scale), 280);
+
+    // Label
+    lbl := TLabel.Create(dlg);
+    lbl.Parent := dlg;
+    lbl.Caption := 'Neuer Pfad / neue URL:';
+    lbl.Left := Round(10 * Scale);
+    lbl.Top  := Round(10 * Scale);
+
+    // Eingabefeld
+    edt := TEdit.Create(dlg);
+    edt.Parent := dlg;
+    edt.Left := Round(10 * Scale);
+    edt.Top  := Round(35 * Scale);
+    edt.Width := dlg.ClientWidth - Round(20 * Scale);
+    edt.Height := Max(Round(26 * Scale), 26);
+    edt.Text := ButtonToDelete.Hint;   // <‑‑ WICHTIG
+
+    // OK
+    btnOK := TButton.Create(dlg);
+    btnOK.Parent := dlg;
+    btnOK.Caption := 'OK';
+    btnOK.ModalResult := mrOk;
+    btnOK.Width := BtnW;
+
+    // Cancel
+    btnCancel := TButton.Create(dlg);
+    btnCancel.Parent := dlg;
+    btnCancel.Caption := 'Abbrechen';
+    btnCancel.ModalResult := mrCancel;
+    btnCancel.Width := BtnW;
+
+    TextH := Abs(btnOK.Font.Height);
+    BtnH := Max(TextH + PaddingY * 2, 24);
+
+    btnOK.Height := BtnH;
+    btnCancel.Height := BtnH;
+
+    btnOK.Padding.Top := PaddingY;
+    btnOK.Padding.Bottom := PaddingY;
+    btnCancel.Padding.Top := PaddingY;
+    btnCancel.Padding.Bottom := PaddingY;
+
+    // Buttons unter dem Edit
+    btnCancel.Left := dlg.ClientWidth - BtnW - Spacing;
+    btnCancel.Top  := edt.Top + edt.Height + Spacing;
+
+    btnOK.Left := btnCancel.Left - BtnW - Spacing;
+    btnOK.Top  := btnCancel.Top;
+
+    dlg.ClientHeight := btnCancel.Top + BtnH + BottomPadding;
+
+    // Dialog unterhalb des Buttons anzeigen
+    p := ButtonToDelete.ClientToScreen(Point(0, 0));
+    dlg.Left := p.X;
+    dlg.Top := p.Y + ButtonToDelete.Height + Round(10 * Scale);
+
+    KeepFormOnScreen(dlg);
+    res := dlg.ShowModal;
+
+    if res <> mrOk then Exit;
+    if Trim(edt.Text) = '' then Exit;
+
+    // Pfad/URL aktualisieren
+    ButtonToDelete.Hint := edt.Text;
+
+    // Buttons neu berechnen
+    RecalculateButtonWidths;
+    RecalculateButtonPositions;
+
+    SaveButtonsToIni;
   finally
     dlg.Free;
   end;
