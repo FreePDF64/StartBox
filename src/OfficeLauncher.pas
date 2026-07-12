@@ -843,15 +843,15 @@ begin
   MenuRenameButton.OnClick := MenuRenameButtonClick;
   PopupButton.Items.Add(MenuRenameButton);
 
-  MenuEditPath := TMenuItem.Create(Self);
-  MenuEditPath.Caption := 'Pfad/URL anpassen';
-  MenuEditPath.OnClick := MenuEditPathClick;
-  PopupButton.Items.Add(MenuEditPath);
-
   MenuDeleteButton := TMenuItem.Create(Self);
   MenuDeleteButton.Caption := 'Löschen';
   MenuDeleteButton.OnClick := MenuDeleteButtonClick;
   PopupButton.Items.Add(MenuDeleteButton);
+
+  MenuEditPath := TMenuItem.Create(Self);
+  MenuEditPath.Caption := 'Pfad/URL anpassen';
+  MenuEditPath.OnClick := MenuEditPathClick;
+  PopupButton.Items.Add(MenuEditPath);
 
   Sep := TMenuItem.Create(PopupButton);
   Sep.Caption := '-';
