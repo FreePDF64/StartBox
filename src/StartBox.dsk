@@ -62,9 +62,9 @@ BottomMiddelPanelData=0000080001020200000009000000446F636B5369746530100000004772
 [View0]
 CustomEditViewType=TEditView
 Module=D:\Delphi\OfficeLauncher\OfficeLauncher.pas
-CursorX=27
-CursorY=442
-TopLine=421
+CursorX=34
+CursorY=1385
+TopLine=1356
 LeftCol=1
 Elisions=
 Bookmarks={0,170,1}{1,1117,1}
@@ -200,11 +200,6 @@ Dockable=1
 StayOnTop=0
 SplitPos=152
 
-[PropInspDesignerSelection]
-ArrangeBy=Name
-SelectedItem=Name,
-ExpandedItems=LiveBindings-Designer=0,MenuAnimation=0
-
 [frmDesignPreview]
 PercentageSizes=1
 Create=1
@@ -299,8 +294,8 @@ TBDockHeight=362
 LRDockWidth=273
 Dockable=1
 StayOnTop=0
-Name=32
-Description=88
+Name=50
+Description=137
 filter=1
 
 [DebugLogView]

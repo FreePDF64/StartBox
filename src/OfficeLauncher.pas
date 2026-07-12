@@ -449,7 +449,7 @@ begin
      'HowTo:' + #13 +
      '- Programme/Dateien/etc. werden per Drag&&Drop hinzugefügt' + #13 +
      '- Icons werden automatisch aus den Dateien extrahiert' + #13 +
-     '- Rechtsklick auf Button: u.a. Umbenennen, Löschen, als Admin ausführen' + #13 +
+     '- Rechtsklick auf Button: u.a. Umbenennen, Löschen, etc.' + #13 +
      '- Schließen (X) minimiert in den System Tray' + #13 +
      '- Beenden NUR über das Tray-Menü' + #13 +
      '- Auswahl: Nach Klick auf Buttons minimieren in den System Tray' + #13 +
