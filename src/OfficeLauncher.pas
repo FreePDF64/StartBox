@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   12.07.2026
+// Ende:   19.07.2026
 //
 
 unit OfficeLauncher;
@@ -803,7 +803,7 @@ begin
   CoInitialize(nil);
 
   Application.ShowHint := True;
-  DragDelay := 300;
+  DragDelay := 600; // Verzögerung des Drag&Drop der Buttons
 
   IniPath := ChangeFileExt(Application.ExeName, '.ini');
   Ini     := TIniFile.Create(IniPath);
