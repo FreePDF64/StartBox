@@ -1,17 +1,17 @@
 object Form1: TForm1
   Left = 200
   Top = 200
-  Margins.Left = 4
-  Margins.Top = 4
-  Margins.Right = 4
-  Margins.Bottom = 4
+  Margins.Left = 8
+  Margins.Top = 8
+  Margins.Right = 8
+  Margins.Bottom = 8
   Caption = 'StartBox'
-  ClientHeight = 500
-  ClientWidth = 503
+  ClientHeight = 1000
+  ClientWidth = 1006
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -14
+  Font.Height = -28
   Font.Name = 'Segoe UI'
   Font.Style = []
   Position = poDefault
@@ -19,8 +19,8 @@ object Form1: TForm1
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnResize = FormResize
-  PixelsPerInch = 120
-  TextHeight = 19
+  PixelsPerInch = 240
+  TextHeight = 38
   object ImageList1: TImageList
     ColorDepth = cd32Bit
     Left = 212

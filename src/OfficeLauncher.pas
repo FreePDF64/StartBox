@@ -4,7 +4,7 @@
 // Autor: Michael Tesch, Bredstedt
 //
 // Anfang: 08.06.2026
-// Ende:   19.07.2026
+// Ende:   28.07.2026
 //
 
 unit OfficeLauncher;
@@ -439,7 +439,7 @@ end;
 procedure TForm1.MenuHelpClick(Sender: TObject);
 begin
   MessageDlgBottomRight
-    ('StartBox Version 1.5' + #13 + #13 +
+    ('StartBox Version 1.6' + #13 + #13 +
      'Copyright © 2026 by FreePDF64@outlook.com' + #13 +
      'Website -> https://github.com/FreePDF64/StartBox' + #13 + #13 +
      'StartBox darf sowohl im privaten als auch im kommerziellen' + #13 +
@@ -449,7 +449,7 @@ begin
      'HowTo:' + #13 +
      '- Programme/Dateien/etc. werden per Drag&&Drop hinzugefügt' + #13 +
      '- Icons werden automatisch aus den Dateien extrahiert' + #13 +
-     '- Rechtsklick auf Button: u.a. Umbenennen, Löschen, etc.' + #13 +
+     '- Rechtsklick auf Button: u.a. Umbenennen, Löschen, als Admin ausführen' + #13 +
      '- Schließen (X) minimiert in den System Tray' + #13 +
      '- Beenden NUR über das Tray-Menü' + #13 +
      '- Auswahl: Nach Klick auf Buttons minimieren in den System Tray' + #13 +
@@ -711,32 +711,39 @@ end;
 procedure TForm1.RecalculateButtonWidths;
 var
   I: Integer;
-  W, TextW: Integer;
+  W, TextW, GlyphW: Integer;
+  R: TRect;
 begin
-  // Wenn keine Buttons existieren → Default
   if Buttons.Count = 0 then
     Exit;
 
-  // Font für Textmessung
   Canvas.Font.Assign(Buttons[0].Font);
 
-  // Mindestbreite
   W := 120;
 
-  // *** WICHTIG ***
-  // Nur bestehende Buttons messen → NICHT den neuen Button
   for I := 0 to Buttons.Count - 1 do
   begin
-    TextW := Canvas.TextWidth(Buttons[I].Caption);
+    R := Rect(0, 0, 0, 0);
+    DrawText(Canvas.Handle,
+             PChar(Buttons[I].Caption),
+             Length(Buttons[I].Caption),
+             R,
+             DT_LEFT or DT_SINGLELINE or DT_NOPREFIX or DT_CALCRECT);
 
-    // kompakter Padding: Icon + 12px Luft
-    TextW := TextW + 40 + 12;
+    TextW := R.Width;
+
+    if Assigned(Buttons[I].Images) then
+      GlyphW := Buttons[I].Images.Width + Buttons[I].Spacing
+    else
+      GlyphW := 0;
+
+    // *** Buttons etwas breiter machen ***
+    TextW := TextW + GlyphW + 26;  // vorher 20 → jetzt 26
 
     if TextW > W then
       W := TextW;
   end;
 
-  // Alle Buttons auf die gleiche Breite setzen
   for I := 0 to Buttons.Count - 1 do
     Buttons[I].Width := W;
 end;
@@ -803,7 +810,7 @@ begin
   CoInitialize(nil);
 
   Application.ShowHint := True;
-  DragDelay := 600; // Verzögerung des Drag&Drop der Buttons
+  DragDelay := 300;
 
   IniPath := ChangeFileExt(Application.ExeName, '.ini');
   Ini     := TIniFile.Create(IniPath);
@@ -843,15 +850,15 @@ begin
   MenuRenameButton.OnClick := MenuRenameButtonClick;
   PopupButton.Items.Add(MenuRenameButton);
 
-  MenuDeleteButton := TMenuItem.Create(Self);
-  MenuDeleteButton.Caption := 'Löschen';
-  MenuDeleteButton.OnClick := MenuDeleteButtonClick;
-  PopupButton.Items.Add(MenuDeleteButton);
-
   MenuEditPath := TMenuItem.Create(Self);
   MenuEditPath.Caption := 'Pfad/URL anpassen';
   MenuEditPath.OnClick := MenuEditPathClick;
   PopupButton.Items.Add(MenuEditPath);
+
+  MenuDeleteButton := TMenuItem.Create(Self);
+  MenuDeleteButton.Caption := 'Löschen';
+  MenuDeleteButton.OnClick := MenuDeleteButtonClick;
+  PopupButton.Items.Add(MenuDeleteButton);
 
   Sep := TMenuItem.Create(PopupButton);
   Sep.Caption := '-';
@@ -1465,7 +1472,7 @@ var
   BtnW, BtnH, Spacing: Integer;
   PaddingY: Integer;
   TextH: Integer;
-  BottomPadding: Integer;
+  BottomPadding, NewW, NewH: Integer;
 begin
   if ButtonToDelete = nil then Exit;
 
@@ -1560,6 +1567,11 @@ begin
 
     RecalculateButtonWidths;
     RecalculateButtonPositions;
+
+    // Form automatisch anpassen
+    CalculateAutoFormSize(NewW, NewH);
+    ClientWidth  := NewW;
+    ClientHeight := NewH;
 
     SaveButtonsToIni;
   finally
